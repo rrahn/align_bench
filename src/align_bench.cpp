@@ -79,13 +79,15 @@ int main(int argc, char* argv[])
 //    loadSequence(setLeft, options.inputFileOne.c_str());
 //    loadSequence(setRight, options.inputFileTwo.c_str());
 
-    SequenceGenerator<Dna> gen;
-    gen.setNumber(2000);
+    SequenceGenerator<AminoAcid> gen;
+    gen.setNumber(200000);
     gen.setMinLength(250);
     gen.setMaxLength(250);
 
+    std::cout << "Start generating sequences..." << std::flush;
     auto seqSet1 = gen.generate();
     auto seqSet2 = gen.generate();
+    std::cout << "\t done\n" << std::flush;
 
 //    for (auto& str : seqSet)
 //        std::cout << str << "\n";
@@ -94,9 +96,11 @@ int main(int argc, char* argv[])
 // TODO(rrahn): Make object configurable.
     BenchmarkExecutor device;
 
-    device.runGlobalAlignment(seqSet1, seqSet2);
+    device.runGlobalAlignment(seqSet1, seqSet2, 4, seqan::Parallel());
     device.printProfile(std::cout);
 
+//    device.runGlobalAlignment(seqSet1, seqSet2, seqan::Serial());
+//    device.printProfile(std::cout);
 
     return EXIT_SUCCESS;
 }

@@ -50,6 +50,8 @@ struct Timer
     TValue _begin;
     TValue _end;
 
+    unsigned _rep;
+
     Timer() :
     _begin(0),
     _end(0)
@@ -59,6 +61,16 @@ struct Timer
 // ============================================================================
 // Functions
 // ============================================================================
+
+// ----------------------------------------------------------------------------
+// Function setRep()
+// ----------------------------------------------------------------------------
+
+template <typename TValue, typename TSpec>
+inline void setRep(Timer<TValue, TSpec> & timer, unsigned const rep)
+{
+    timer._rep = rep;
+}
 
 // ----------------------------------------------------------------------------
 // Function start()
@@ -87,7 +99,7 @@ inline void stop(Timer<TValue, TSpec> & timer)
 template <typename TValue, typename TSpec>
 inline TValue getValue(Timer<TValue, TSpec> const & timer)
 {
-    return timer._end - timer._begin;
+    return (timer._end - timer._begin) / timer._rep;
 }
 
 template <typename TValue, typename TSpec>
@@ -137,7 +149,10 @@ class BenchmarkExecutor
 public:
 
     template <typename TSet1, typename TSet2>
-    inline void runGlobalAlignment(TSet1 const &, TSet2 const &);
+    inline void runGlobalAlignment(TSet1 const &, TSet2 const &, unsigned const, seqan::Parallel const &);
+
+    template <typename TSet1, typename TSet2>
+    inline void runGlobalAlignment(TSet1 const &, TSet2 const &, seqan::Serial const &);
 
     template <typename TStream>
     inline void
@@ -155,7 +170,7 @@ private:
 
 template <typename TSet1, typename TSet2>
 inline void
-BenchmarkExecutor::runGlobalAlignment(TSet1 const & set1, TSet2 const & set2)
+BenchmarkExecutor::runGlobalAlignment(TSet1 const & set1, TSet2 const & set2, unsigned const rep, seqan::Parallel const & /*tag*/)
 {
     // Current old interface!
     SEQAN_ASSERT_EQ(length(seq1), length(set2));
@@ -173,12 +188,80 @@ BenchmarkExecutor::runGlobalAlignment(TSet1 const & set1, TSet2 const & set2)
         assignSource(row(std::get<0>(tuple), 1), std::get<2>(tuple));
     }
 
+
 //    for (auto& align : alignSet)
 //        std::cout << align << std::endl;
+    setRep(mTimer, rep);
     start(mTimer);
-    auto scores = globalAlignment(alignSet, SimpleScore(5, -3, -2, -8), Gotoh());
+    for (unsigned i = 0; i < rep; ++i)
+        auto scores = globalAlignment(alignSet, Blosum62(-2, -8), Gotoh());
     stop(mTimer);
+
+    // Proposed new interface!
+//    auto alignObj = createAlignArray(str, str, Score<>, AlignmentTraits);    // pairwise alignment, one-vs-one
+//    auto alignObj = createAlign(str, str, Score<>, ArrayGaps);
+//    auto alignObj = createAlign(str, str, Score<>, Graph);
+//    auto alignObj = createAlign(str, str, Score<>, Fragments);
+//    auto alignObj = createAlign(str, str , Score<>, CigarString);
+//
+//    auto alignObj = createSplitAlign(...);  // get parameters necessary for split alignment.
+//    auto alignObj = createExtendAlign(...);  // get parameters necessary for extend alignment.
+//    auto alignObj = createBCAlign(...);       // get parameters necessary for banded chain alignment.
+//
+//    auto alignObj = createMsaAlign(set);     // multiple alignment
+
+    // Global function:
+//    align(alignObj, Config<TTraits>(), ExecPolicy());
 }
+
+template <typename TSet1, typename TSet2>
+inline void
+BenchmarkExecutor::runGlobalAlignment(TSet1 const & set1, TSet2 const & set2, seqan::Serial const & /*tag*/)
+{
+    using TAlign = Align<typename Value<TSet1>::Type, ArrayGaps>;
+
+    // Current old interface!
+    SEQAN_ASSERT_EQ(length(seq1), length(set2));
+
+    StringSet<TAlign> alignSet;
+    resize(alignSet, length(set1), Exact());
+
+    auto zipView = makeZipView(alignSet, set1, set2);
+
+    for (auto tuple : zipView)
+    {
+        resize(rows(std::get<0>(tuple)), 2);
+        assignSource(row(std::get<0>(tuple), 0), std::get<1>(tuple));
+        assignSource(row(std::get<0>(tuple), 1), std::get<2>(tuple));
+    }
+
+    //    for (auto& align : alignSet)
+    //        std::cout << align << std::endl;
+    start(mTimer);
+    for (unsigned i = 0; i < length(alignSet); ++i)
+    {
+        auto score = globalAlignment(alignSet[i], SimpleScore(5, -3, -2, -8), Gotoh());
+    }
+    stop(mTimer);
+
+    // Proposed new interface!
+    //    auto alignObj = createAlignArray(str, str, Score<>, AlignmentTraits);    // pairwise alignment, one-vs-one
+    //    auto alignObj = createAlign(str, str, Score<>, ArrayGaps);
+    //    auto alignObj = createAlign(str, str, Score<>, Graph);
+    //    auto alignObj = createAlign(str, str, Score<>, Fragments);
+    //    auto alignObj = createAlign(str, str , Score<>, CigarString);
+    //
+    //    auto alignObj = createSplitAlign(...);  // get parameters necessary for split alignment.
+    //    auto alignObj = createExtendAlign(...);  // get parameters necessary for extend alignment.
+    //    auto alignObj = createBCAlign(...);       // get parameters necessary for banded chain alignment.
+    //
+    //    auto alignObj = createMsaAlign(set);     // multiple alignment
+
+    // Global function:
+    //    align(alignObj, Config<TTraits>(), ExecPolicy());
+}
+
+
 
 
 #endif  // #ifndef BENCHMARK_EXECUTOR_HPP_
