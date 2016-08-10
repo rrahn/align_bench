@@ -12,7 +12,7 @@ project (align_bench CXX)
 # over the built-in ones from CMake.  This is used in
 # FindBZip2, for example which we slightly modify.
 set (CMAKE_MODULE_PATH
-    $ENV{SEQAN_ROOT}/util/cmake/FindTBB
+    #$ENV{SEQAN_ROOT}/util/cmake/FindTBB
     $ENV{SEQAN_ROOT}/util/cmake)
 
 message (STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")

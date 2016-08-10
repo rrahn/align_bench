@@ -36,7 +36,7 @@
 #define BENCHMARK_EXECUTOR_HPP_
 
 #include <seqan/basic.h>
-#include <seqan/align.h>
+#include <seqan/align_parallel.h>
 
 using namespace seqan;
 
@@ -152,7 +152,19 @@ public:
     inline void runGlobalAlignment(TSet1 const &, TSet2 const &, unsigned const, seqan::Parallel const &);
 
     template <typename TSet1, typename TSet2>
-    inline void runGlobalAlignment(TSet1 const &, TSet2 const &, seqan::Serial const &);
+    inline void runGlobalAlignment(TSet1 const &, TSet2 const &, unsigned const, seqan::Serial const &);
+
+    template <typename TSet1, typename TSet2, typename TParSpec, typename TVecSpec>
+    inline void runGlobalAlignment(AlignBenchOptions const &,
+                                   TSet1 const &,
+                                   TSet2 const &,
+                                   seqan::ExecutionPolicy<TParSpec, TVecSpec> const &);
+
+    template <typename TSet1, typename TSet2>
+    inline void runGlobalAlignment(AlignBenchOptions const &,
+                                   TSet1 const &,
+                                   TSet2 const &,
+                                   seqan::ExecutionPolicy<seqan::Serial, seqan::Default> const &);
 
     template <typename TStream>
     inline void
@@ -167,6 +179,29 @@ private:
 
     Timer<double>   mTimer;
 };
+
+
+template <typename TAlignObject>
+inline void writeAlignment(AlignBenchOptions const & options,
+                           TAlignObject const & align)
+{
+    if (options.alignOut == "stdout")
+    {
+        std::cout << align << std::endl;
+        return;
+    }
+
+    std::ofstream alignOut;
+    alignOut.open(options.alignOut.c_str());
+    if (!alignOut.good())
+    {
+        std::cerr << "Could not open file << " << options.alignOut.c_str() << ">>!" << std::endl;
+        return;
+    }
+    alignOut << align;
+    alignOut.close();
+}
+
 
 template <typename TSet1, typename TSet2>
 inline void
@@ -197,6 +232,11 @@ BenchmarkExecutor::runGlobalAlignment(TSet1 const & set1, TSet2 const & set2, un
         auto scores = globalAlignment(alignSet, Blosum62(-2, -8), Gotoh());
     stop(mTimer);
 
+//    std::cout << "Align Profile: " << std::endl;
+//    std::cout << "Preprocessing: " << profile.preprTimer << "s" << std::endl;
+//    std::cout << "Alignment: " << profile.alignTimer << "s" << std::endl;
+//    std::cout << "Traceback: " << profile.traceTimer << "s" << std::endl;
+
     // Proposed new interface!
 //    auto alignObj = createAlignArray(str, str, Score<>, AlignmentTraits);    // pairwise alignment, one-vs-one
 //    auto alignObj = createAlign(str, str, Score<>, ArrayGaps);
@@ -216,7 +256,10 @@ BenchmarkExecutor::runGlobalAlignment(TSet1 const & set1, TSet2 const & set2, un
 
 template <typename TSet1, typename TSet2>
 inline void
-BenchmarkExecutor::runGlobalAlignment(TSet1 const & set1, TSet2 const & set2, seqan::Serial const & /*tag*/)
+BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions const & options,
+                                      TSet1 const & set1,
+                                      TSet2 const & set2,
+                                      seqan::ExecutionPolicy<seqan::Serial, seqan::Default> const & execPolicy)
 {
     using TAlign = Align<typename Value<TSet1>::Type, ArrayGaps>;
 
@@ -235,33 +278,54 @@ BenchmarkExecutor::runGlobalAlignment(TSet1 const & set1, TSet2 const & set2, se
         assignSource(row(std::get<0>(tuple), 1), std::get<2>(tuple));
     }
 
-    //    for (auto& align : alignSet)
-    //        std::cout << align << std::endl;
-    start(mTimer);
-    for (unsigned i = 0; i < length(alignSet); ++i)
+    unsigned score = MinValue<unsigned>::VALUE;
+    setRep(mTimer, options.rep);
+    start(mTimer); 
+    for (unsigned i = 0; i < options.rep; ++i)
     {
-        auto score = globalAlignment(alignSet[i], SimpleScore(5, -3, -2, -8), Gotoh());
+        score = globalAlignment(row(alignSet[0], 0), row(alignSet[0], 1), Blosum62(-2, -6));
     }
     stop(mTimer);
 
-    // Proposed new interface!
-    //    auto alignObj = createAlignArray(str, str, Score<>, AlignmentTraits);    // pairwise alignment, one-vs-one
-    //    auto alignObj = createAlign(str, str, Score<>, ArrayGaps);
-    //    auto alignObj = createAlign(str, str, Score<>, Graph);
-    //    auto alignObj = createAlign(str, str, Score<>, Fragments);
-    //    auto alignObj = createAlign(str, str , Score<>, CigarString);
-    //
-    //    auto alignObj = createSplitAlign(...);  // get parameters necessary for split alignment.
-    //    auto alignObj = createExtendAlign(...);  // get parameters necessary for extend alignment.
-    //    auto alignObj = createBCAlign(...);       // get parameters necessary for banded chain alignment.
-    //
-    //    auto alignObj = createMsaAlign(set);     // multiple alignment
-
-    // Global function:
-    //    align(alignObj, Config<TTraits>(), ExecPolicy());
+    std::cout << score << std::flush;
+    writeAlignment(options, alignSet[0]);
 }
 
+template <typename TSet1, typename TSet2, typename TParSpec, typename TVecSpec>
+inline void
+BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions const & options,
+                                      TSet1 const & set1,
+                                      TSet2 const & set2,
+                                      seqan::ExecutionPolicy<TParSpec, TVecSpec> const & execPolicy)
+{
+    using TAlign = Align<typename Value<TSet1>::Type, ArrayGaps>;
 
+    // Current old interface!
+    SEQAN_ASSERT_EQ(length(seq1), length(set2));
 
+    StringSet<TAlign> alignSet;
+    resize(alignSet, length(set1), Exact());
+
+    auto zipView = makeZipView(alignSet, set1, set2);
+
+    for (auto tuple : zipView)
+    {
+        resize(rows(std::get<0>(tuple)), 2);
+        assignSource(row(std::get<0>(tuple), 0), std::get<1>(tuple));
+        assignSource(row(std::get<0>(tuple), 1), std::get<2>(tuple));
+    }
+
+    unsigned score = MinValue<unsigned>::VALUE;
+    setRep(mTimer, options.rep);
+    start(mTimer);
+    for (unsigned i = 0; i < options.rep; ++i)
+    {
+        score = parallelAlign(execPolicy, row(alignSet[0], 0), row(alignSet[0], 1), Blosum62(-2, -6));
+
+    }
+    stop(mTimer);
+    std::cout << score << std::flush;
+    writeAlignment(options, alignSet[0]);
+}
 
 #endif  // #ifndef BENCHMARK_EXECUTOR_HPP_

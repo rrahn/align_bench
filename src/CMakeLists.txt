@@ -21,17 +21,32 @@ message (STATUS "Configuring src/align_bench_app")
 
 # Update the cmake flags required for SeqAn.
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -march=native")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 # Search SeqAn and select dependencies.
-# find_package (OpenMP)
 # find_package (ZLIB)
 # find_package (BZip2)
+
+set (TBB_INCLUDE_DIR "/opt/local/include/tbb/")
+set (TBB_LIBRARY "/opt/local/lib/")
+
+find_package (TBB)
+find_package (OpenMP)
 find_package (SeqAn REQUIRED)
 
+# Warn if TBB wasn't find.
+if (NOT TBB_FOUND)
+    message (STATUS "   TBB not found")
+else(NOT TBB_FOUND)
+    message (STATUS "   Using TBB Version ${TBB_VERSION}")
+    list (APPEND SEQAN_DEFINITIONS "${TBB_DEFINITIONS};-DSEQAN_TBB")
+    list (APPEND SEQAN_LIBRARIES "${TBB_LIBRARIES}")
+    list (APPEND SEQAN_INCLUDE_DIRS "${TBB_INCLUDE_DIRS}")
+endif (NOT TBB_FOUND)
+
 # Warn if OpenMP was not found.
-# if (NOT OPENMP_FOUND)
-#   message (STATUS "  OpenMP 3.0 not found: building yara without multi-threading.")
-# endif (NOT OPENMP_FOUND)
+if (NOT OPENMP_FOUND)
+  message (STATUS "  No OenMP support for parallel alignment computation.")
+endif (NOT OPENMP_FOUND)
 
 # Warn if Zlib was not found.
 # if (NOT ZLIB_FOUND)

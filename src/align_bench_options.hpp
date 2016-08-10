@@ -37,15 +37,22 @@
 
 #include <string>
 
-namespace seqan
+enum class ParallelMode : uint8_t
 {
+    SERIAL,
+    NATIVE,
+    OMP,
+    TBB
+};
+
 
 struct AlignBenchOptions
 {
     std::string inputFileOne;
     std::string inputFileTwo;
+    std::string alignOut;
+    unsigned rep;
+    ParallelMode parMode = ParallelMode::SERIAL;
 };
-
-}
 
 #endif  // #ifndef ALIGN_BENCH_OPTIONS_H_
