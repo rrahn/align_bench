@@ -26,6 +26,8 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 # find_package (ZLIB)
 # find_package (BZip2)
 
+message (STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
+
 set (TBB_INCLUDE_DIR "/opt/local/include/tbb/")
 set (TBB_LIBRARY "/opt/local/lib/")
 
@@ -45,7 +47,7 @@ endif (NOT TBB_FOUND)
 
 # Warn if OpenMP was not found.
 if (NOT OPENMP_FOUND)
-  message (STATUS "  No OenMP support for parallel alignment computation.")
+  message (STATUS "  No OpenMP support for parallel alignment computation.")
 endif (NOT OPENMP_FOUND)
 
 # Warn if Zlib was not found.

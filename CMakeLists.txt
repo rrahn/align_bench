@@ -11,13 +11,14 @@ project (align_bench CXX)
 # Note that the find modules in util/make take precedence
 # over the built-in ones from CMake.  This is used in
 # FindBZip2, for example which we slightly modify.
-set (CMAKE_MODULE_PATH
+#set (CMAKE_MODULE_PATH
     #$ENV{SEQAN_ROOT}/util/cmake/FindTBB
-    $ENV{SEQAN_ROOT}/util/cmake)
+#    $ENV{SEQAN_ROOT}/util/cmake)
+
 
 message (STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
-set (SEQAN_INCLUDE_PATH $ENV{SEQAN_ROOT}/include)
+#set (SEQAN_INCLUDE_PATH $ENV{SEQAN_ROOT}/include)
 message (STATUS "SEQAN_INCLUDE_PATH: ${SEQAN_INCLUDE_PATH}")
 
 # ----------------------------------------------------------------------------

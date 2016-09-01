@@ -154,16 +154,18 @@ public:
     template <typename TSet1, typename TSet2>
     inline void runGlobalAlignment(TSet1 const &, TSet2 const &, unsigned const, seqan::Serial const &);
 
-    template <typename TSet1, typename TSet2, typename TParSpec, typename TVecSpec>
-    inline void runGlobalAlignment(AlignBenchOptions const &,
+    template <typename TSet1, typename TSet2, typename TScore, typename TParSpec, typename TVecSpec>
+    inline void runGlobalAlignment(AlignBenchOptions &,
                                    TSet1 const &,
                                    TSet2 const &,
-                                   seqan::ExecutionPolicy<TParSpec, TVecSpec> const &);
+                                   TScore const &,
+                                   seqan::ExecutionPolicy<TParSpec, TVecSpec> &);
 
-    template <typename TSet1, typename TSet2>
-    inline void runGlobalAlignment(AlignBenchOptions const &,
+    template <typename TSet1, typename TSet2, typename TScore>
+    inline void runGlobalAlignment(AlignBenchOptions &,
                                    TSet1 const &,
                                    TSet2 const &,
+                                   TScore const &,
                                    seqan::ExecutionPolicy<seqan::Serial, seqan::Default> const &);
 
     template <typename TStream>
@@ -173,6 +175,12 @@ public:
         printRuler(stream);
         stream << mTimer << std::endl;
         printRuler(stream);
+    }
+
+    inline auto
+    getTime()
+    {
+        return getValue(mTimer);
     }
 
 private:
@@ -208,7 +216,7 @@ inline void
 BenchmarkExecutor::runGlobalAlignment(TSet1 const & set1, TSet2 const & set2, unsigned const rep, seqan::Parallel const & /*tag*/)
 {
     // Current old interface!
-    SEQAN_ASSERT_EQ(length(seq1), length(set2));
+    SEQAN_ASSERT_EQ(length(set1), length(set2));
 
     using TAlign = Align<typename Value<TSet1>::Type, ArrayGaps>;
     StringSet<TAlign> alignSet;
@@ -254,17 +262,18 @@ BenchmarkExecutor::runGlobalAlignment(TSet1 const & set1, TSet2 const & set2, un
 //    align(alignObj, Config<TTraits>(), ExecPolicy());
 }
 
-template <typename TSet1, typename TSet2>
+template <typename TSet1, typename TSet2, typename TScore>
 inline void
-BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions const & options,
+BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
                                       TSet1 const & set1,
                                       TSet2 const & set2,
+                                      TScore const & scoreMat,
                                       seqan::ExecutionPolicy<seqan::Serial, seqan::Default> const & execPolicy)
 {
     using TAlign = Align<typename Value<TSet1>::Type, ArrayGaps>;
 
     // Current old interface!
-    SEQAN_ASSERT_EQ(length(seq1), length(set2));
+    SEQAN_ASSERT_EQ(length(set1), length(set2));
 
     StringSet<TAlign> alignSet;
     resize(alignSet, length(set1), Exact());
@@ -278,30 +287,32 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions const & options,
         assignSource(row(std::get<0>(tuple), 1), std::get<2>(tuple));
     }
 
-    unsigned score = MinValue<unsigned>::VALUE;
+//    unsigned score = MinValue<unsigned>::VALUE;
     setRep(mTimer, options.rep);
     start(mTimer); 
     for (unsigned i = 0; i < options.rep; ++i)
     {
-        score = globalAlignment(row(alignSet[0], 0), row(alignSet[0], 1), Blosum62(-2, -6));
+        auto score = globalAlignment(row(alignSet[0], 0), row(alignSet[0], 1), scoreMat);
+        options.stats.scores.push_back(score);
     }
     stop(mTimer);
 
-    std::cout << score << std::flush;
+//    std::cout << "Score: " << score << '\n';
     writeAlignment(options, alignSet[0]);
 }
 
-template <typename TSet1, typename TSet2, typename TParSpec, typename TVecSpec>
+template <typename TSet1, typename TSet2, typename TScore, typename TParSpec, typename TVecSpec>
 inline void
-BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions const & options,
+BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
                                       TSet1 const & set1,
                                       TSet2 const & set2,
-                                      seqan::ExecutionPolicy<TParSpec, TVecSpec> const & execPolicy)
+                                      TScore const & scoreMat,
+                                      seqan::ExecutionPolicy<TParSpec, TVecSpec> & execPolicy)
 {
     using TAlign = Align<typename Value<TSet1>::Type, ArrayGaps>;
 
     // Current old interface!
-    SEQAN_ASSERT_EQ(length(seq1), length(set2));
+    SEQAN_ASSERT_EQ(length(set1), length(set2));
 
     StringSet<TAlign> alignSet;
     resize(alignSet, length(set1), Exact());
@@ -315,16 +326,19 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions const & options,
         assignSource(row(std::get<0>(tuple), 1), std::get<2>(tuple));
     }
 
-    unsigned score = MinValue<unsigned>::VALUE;
+    execPolicy.numThreads = options.threadCount;
+    options.stats.threads = options.threadCount;
+    options.stats.blockSize = options.blockSize;
+//    unsigned score = MinValue<unsigned>::VALUE;
     setRep(mTimer, options.rep);
     start(mTimer);
     for (unsigned i = 0; i < options.rep; ++i)
     {
-        score = parallelAlign(execPolicy, row(alignSet[0], 0), row(alignSet[0], 1), Blosum62(-2, -6));
-
+        auto score = parallelAlign(execPolicy, row(alignSet[0], 0), row(alignSet[0], 1), scoreMat, options.blockSize);
+        options.stats.scores.push_back(score);
     }
     stop(mTimer);
-    std::cout << score << std::flush;
+//    std::cout << "Score: " << score << '\n';
     writeAlignment(options, alignSet[0]);
 }
 
