@@ -28,8 +28,8 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
 message (STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
-set (TBB_INCLUDE_DIR "/opt/local/include/tbb/")
-set (TBB_LIBRARY "/opt/local/lib/")
+#set (TBB_INCLUDE_DIR "/opt/local/include/tbb/")
+#set (TBB_LIBRARY "/opt/local/lib/")
 
 find_package (TBB)
 find_package (OpenMP)

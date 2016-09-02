@@ -17,11 +17,11 @@ SSE4_BIN=$3
 AVX2_BIN=$4
 RES_FILE="$RES_DIR/res.csv"
 PAR_EXEC=("native" "omp" "tbb" "native_vec" "omp_vec" "tbb_vec")
-BLOCK_SIZE=(50 100) # 150 200)
-SEQ_MIN=(1000 10000) # 10000 20000 50000 100000 200000)
-SEQ_MAX=(1100 11000) # 11000 22000 55000 110000 220000)
+BLOCK_SIZE=(50 100 150 200)
+SEQ_MIN=(1000 10000 50000 100000 290000)
+SEQ_MAX=(1100 11000 55000 110000 310000 )
 BITS=(16 32 64)
-ALPHA=("dna") # "aminoacid")
+ALPHA=("dna" "aminoacid")
 RUNS=1
 
 CMD=""
@@ -35,9 +35,9 @@ function exec_par {
     diff -q $par_out $gold_out
     diff_status=$?
     if [ $? -ne 0 ]; then
-        res_par="diff failed,$res_par"
+        res_par="-1,$res_par"
     else
-        res_par="diff succeeded,$res_par"
+        res_par="0,$res_par"
     fi
     echo $res_par >> $RES_FILE
     #Compare result of outfile.
@@ -88,7 +88,10 @@ function config_bs {
 # $1: cmd args
 # $2: outfile
 function config_threads {
-    for threads in `seq 1 5 $MAX_THREADS`; do
+    for threads in `seq 0 5 $MAX_THREADS`; do
+        if [ $threads -eq 0 ]; then
+            threads="1"
+        fi
         config_bs "$1 -t $threads" "$2-t_$threads"
     done
 }
@@ -100,7 +103,7 @@ function run {
     gold_out="$RES_DIR/$2-exec_serial.out"
     echo "res=$CMD $1 -r $RUNS -o $gold_out"
     res=$($CMD $1 -r $RUNS -o $gold_out)
-    echo "gold standard,$res" >> $RES_FILE
+    echo "0,$res" >> $RES_FILE
     
     # run parallel execution
     for exec in "${PAR_EXEC[@]}"; do
