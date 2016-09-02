@@ -354,7 +354,7 @@ int main(int argc, char* argv[])
 // TODO(rrahn): Make object configurable.
     auto handle = std::async(std::launch::async, configure, std::ref(options));
 
-    auto res = handle.wait_for(std::chrono::minutes(120));
+    auto res = handle.wait_for(std::chrono::minutes(40));
     if (res == std::future_status::ready)
         options.stats.state = "done";
     else
