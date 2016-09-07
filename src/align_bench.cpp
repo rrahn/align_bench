@@ -2,9 +2,16 @@
 //#define SEQAN_ENABLE_TESTING 0
 //#define SEQAN_ENABLE_DEBUG 0
 
+#define DP_ALIGN_STATS
+
 #include <cxxabi.h>
 #include <array>
 #include <future>
+
+#ifdef DP_ALIGN_STATS
+std::atomic<uint32_t> simdCounter;
+std::atomic<uint32_t> serialCounter;
+#endif
 
 #include <iostream>
 #include <seqan/align.h>
@@ -18,57 +25,9 @@
 #include "sequence_generator.hpp"
 #include "benchmark_executor.hpp"
 
-//#include <tbb/task.h>
-//#include <tbb/parallel_for.h>
-//#include <tbb/blocked_range.h>
-//#include <tbb/task_scheduler_init.h>
-//#include <tbb/tick_count.h>
-//
-//long SerialFib( long n ) {
-//    if( n<2 )
-//        return n;
-//    else
-//        return SerialFib(n-1)+SerialFib(n-2);
-//}
-//
-//class FibTask: public tbb::task {
-//public:
-//
-//    const long n;
-//    long* const sum;
-//
-//    FibTask( long n_, long* sum_ ) :
-//        n(n_), sum(sum_)
-//    {}
-//    tbb::task* execute()
-//    {      // Overrides virtual function task::execute
-//        if( n < 4 ) {
-//            *sum = SerialFib(n);
-//        } else {
-//            long x, y;
-//            FibTask& a = *new( allocate_child() ) FibTask(n-1,&x);
-//            FibTask& b = *new( allocate_child() ) FibTask(n-2,&y);
-//            // Set ref_count to 'two children plus one for the wait".
-//            set_ref_count(3);
-//            // Start b running.
-//            spawn( b );
-//            // Start a running and wait for all children (a and b).
-//            spawn_and_wait_for_all(a);
-//            // Do the sum
-//            *sum = x+y;
-//        }
-//        return NULL;
-//    }
-//};
-//
-//long ParallelFib( long n ) {
-//    long sum;
-//    FibTask& a = *new(tbb::task::allocate_root()) FibTask(n,&sum);
-//    tbb::task::spawn_root_and_wait(a);
-//    return sum;
-//}
-
 using namespace seqan;
+
+
 
 /*
  * @fn parsCommandLine
@@ -352,13 +311,13 @@ int main(int argc, char* argv[])
 //    std::cout << std::flush;
 
 // TODO(rrahn): Make object configurable.
-    auto handle = std::async(std::launch::async, configure, std::ref(options));
+#ifdef DP_ALIGN_STATS
+    simdCounter = 0;
+    serialCounter = 0;
+#endif
 
-    auto res = handle.wait_for(std::chrono::minutes(40));
-    if (res == std::future_status::ready)
-        options.stats.state = "done";
-    else
-        options.stats.state = "timeout";
+    configure(options);
+    options.stats.state = "done";
     options.stats.writeStats(std::cout);
 
     return EXIT_SUCCESS;

@@ -95,6 +95,10 @@ struct AlignBenchStats
             stream << "," << threads;
         if (vectorLength != 0)
             stream << "," << vectorLength;
+        #ifdef DP_ALIGN_STATS
+            stream << "," << serialCounter.load();
+            stream << "," << simdCounter.load();
+        #endif
         stream << '\n';
     }
 };
