@@ -14,11 +14,15 @@ std::atomic<uint32_t> serialCounter;
 #endif
 
 #include <iostream>
-#include <seqan/align.h>
+
+
 #include <seqan/basic.h>
+#include <seqan/align.h>
+#include <seqan/align_parallel_2.h>
+
 #include <seqan/arg_parse.h>
 #include <seqan/stream.h>
-//#include <seqan/align.h>
+
 #include <seqan/seq_io.h>
 
 #include "align_bench_options.hpp"
@@ -28,7 +32,12 @@ std::atomic<uint32_t> serialCounter;
 using namespace seqan;
 
 
-
+auto toString = [](auto elem)
+{
+    std::stringstream tmp;
+    tmp << elem;
+    return tmp.str();
+};
 /*
  * @fn parsCommandLine
  *
@@ -55,6 +64,10 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
     addOption(parser, seqan::ArgParseOption("o", "output", "Output file to write the alignment to.", seqan::ArgParseArgument::OUTPUT_FILE, "OUT"));
     setDefaultValue(parser, "o", "stdout");
 
+    addOption(parser, seqan::ArgParseOption("s", "sequences", "Number of sequences to be generated.", seqan::ArgParseArgument::INTEGER, "INT"));
+    setMinValue(parser, "s", "1");
+    setDefaultValue(parser, "s", "1");
+
     addOption(parser, seqan::ArgParseOption("ml", "min-length", "Minimal length of sequence.", seqan::ArgParseArgument::INTEGER, "INT"));
     setMinValue(parser, "ml", "1000");
     setDefaultValue(parser, "ml", "1000");
@@ -63,14 +76,23 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
     setMinValue(parser, "xl", "1000");
     setDefaultValue(parser, "xl", "1000");
 
+    addOption(parser, seqan::ArgParseOption("d", "distribution-function", "The distribution functio to use.", seqan::ArgParseArgument::STRING, "PDF"));
+    setValidValues(parser, "d", "uniform normal");
+    setDefaultValue(parser, "d", "uniform");
+
     addOption(parser, seqan::ArgParseOption("r", "repetition", "Number of repeated runs.", seqan::ArgParseArgument::INTEGER, "INT"));
     setMinValue(parser, "r", "1");
     setDefaultValue(parser, "r", "1");
 
-    addOption(parser, seqan::ArgParseOption("p", "parallel-execution", "Parallelization strategy. If not set, execution is forced to serial mode", seqan::ArgParseArgument::STRING, "STR"));
-    setValidValues(parser, "p", "native native_vec omp omp_vec tbb tbb_vec");
+    addOption(parser, seqan::ArgParseOption("e", "execution-mode", "Parallelization strategy. If not set, execution is forced to serial mode", seqan::ArgParseArgument::STRING, "STR"));
+    setValidValues(parser, "e", "seq par par_vec wave wave_vec");
 
     addOption(parser, seqan::ArgParseOption("t", "threads", "Number of threads", seqan::ArgParseArgument::INTEGER, "INT"));
+    setDefaultValue(parser, "t", toString(std::thread::hardware_concurrency()));
+
+    addOption(parser, seqan::ArgParseOption("p", "parallel-instances", "Number of parallel alignment instances", seqan::ArgParseArgument::INTEGER, "INT"));
+    setMinValue(parser, "p", "1");
+    setDefaultValue(parser, "p", toString(std::thread::hardware_concurrency() << 1));
 
     addOption(parser, seqan::ArgParseOption("sw", "score-width", "Width of integers in bits used for score", seqan::ArgParseArgument::STRING, "STR"));
     setValidValues(parser, "sw", "8 16 32 64");
@@ -92,26 +114,32 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
 
     getOptionValue(options.alignOut, parser, "o");
     getOptionValue(options.rep, parser, "r");
+    getOptionValue(options.numSequences, parser, "s");
     getOptionValue(options.minSize, parser, "ml");
     getOptionValue(options.maxSize, parser, "xl");
 
     std::string tmp;
-    if (getOptionValue(tmp, parser, "p"))
+    if (getOptionValue(tmp, parser, "e"))
     {
-        if (tmp == "native")
-            options.parMode = ParallelMode::NATIVE;
-        else if (tmp == "native_vec")
-            options.parMode = ParallelMode::NATIVE_VEC;
-        else if (tmp == "omp")
-            options.parMode = ParallelMode::OMP;
-        else if (tmp == "omp_vec")
-            options.parMode = ParallelMode::OMP_VEC;
-        else if (tmp == "tbb")
-            options.parMode = ParallelMode::TBB;
-        else if (tmp == "tbb_vec")
-            options.parMode = ParallelMode::TBB_VEC;
-        else
-            options.parMode = ParallelMode::SERIAL;
+        if (tmp == "seq")
+            options.parMode = ParallelMode::SEQUENTIAL;
+        else if (tmp == "par")
+            options.parMode = ParallelMode::PARALLEL;
+        else if (tmp == "par_vec")
+            options.parMode = ParallelMode::PARALLEL_VEC;
+        else if (tmp == "wave")
+            options.parMode = ParallelMode::WAVEFRONT;
+        else if (tmp == "wave_vec")
+            options.parMode = ParallelMode::WAVEFRONT_VEC;
+    }
+
+    clear(tmp);
+    if (getOptionValue(tmp, parser, "d"))
+    {
+        if (tmp == "normal")
+            options.distFunction = DistributionFunction::NORMAL_DISTRIBUTION;
+        else if (tmp == "uniform")
+            options.distFunction = DistributionFunction::UNIFORM_DISTRIBUTION;
     }
 
     std::string bitWidth;
@@ -132,8 +160,8 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
     else
         options.alpha = ScoreAlphabet::AMINOACID;
 
-    if (!getOptionValue(options.threadCount, parser, "t"))
-        options.threadCount = std::thread::hardware_concurrency();
+    getOptionValue(options.threadCount, parser, "t");
+    getOptionValue(options.parallelInstances, parser, "p");
 
     // Read block size.
     getOptionValue(options.blockSize, parser, "bs");
@@ -145,11 +173,11 @@ template <typename... TArgs>
 inline void invoke(AlignBenchOptions & options,
                    TArgs &&... args)
 {
-//    std::cout << "Invoke Alignment...\t" << std::flush;
+    std::cout << "Invoke Alignment...\t" << std::flush;
     BenchmarkExecutor device;
     device.runGlobalAlignment(options, std::forward<TArgs>(args)...);
-//    std::cout << "\t\t\tdone." << std::endl;
-//    device.printProfile(std::cout);
+    std::cout << "\t\t\tdone." << std::endl;
+    device.printProfile(std::cout);
     options.stats.time = device.getTime();
 }
 
@@ -159,66 +187,40 @@ inline void configureExec(AlignBenchOptions & options,
 {
     switch (options.parMode)
     {
-        case ParallelMode::NATIVE:
+        case ParallelMode::PARALLEL:
         {
-            options.stats.execPolicy = "par_native";
-            invoke(options, std::forward<TArgs>(args)..., parNative);
+            options.stats.execPolicy = "parallel";
+            invoke(options, std::forward<TArgs>(args)..., par);
             break;
         }
-        case ParallelMode::NATIVE_VEC:
+        case ParallelMode::PARALLEL_VEC:
         {
-            options.stats.execPolicy = "par_native_vec";
+            options.stats.execPolicy = "parallel_vec";
             options.stats.vectorLength = SEQAN_SIZEOF_MAX_VECTOR / static_cast<unsigned>(options.simdWidth);
-            invoke(options, std::forward<TArgs>(args)..., parNativeVec);
+            invoke(options, std::forward<TArgs>(args)..., parVec);
             break;
         }
-        case ParallelMode::OMP:
+        case ParallelMode::WAVEFRONT:
         {
-            #if !defined(_OPENMP)
-                SEQAN_ASSERT_FAIL("OpenMP not enabled.");
-            #else
-                options.stats.execPolicy = "par_omp";
-                invoke(options, std::forward<TArgs>(args)..., parOmp);
-            #endif
+                options.stats.execPolicy = "wavefront";
+                seqan::ExecutionPolicy<seqan::WavefrontAlignment<>, seqan::Serial> wavePolicy;
+                invoke(options, std::forward<TArgs>(args)..., wavePolicy);
             break;
         }
-        case ParallelMode::OMP_VEC:
+        case ParallelMode::WAVEFRONT_VEC:
         {
-            #if !defined(_OPENMP)
-                SEQAN_ASSERT_FAIL("OpenMP not enabled.");
-            #else
-                options.stats.execPolicy = "par_omp_vec";
-                options.stats.vectorLength = SEQAN_SIZEOF_MAX_VECTOR / static_cast<unsigned>(options.simdWidth);
-                invoke(options, std::forward<TArgs>(args)..., parOmpVec);
-            #endif
-            break;
-        }
-        case ParallelMode::TBB:
-        {
-            #if !defined(SEQAN_TBB)
-                SEQAN_ASSERT_FAIL("TBB not enabled.");
-            #else
-                options.stats.execPolicy = "par_tbb";
-                invoke(options, std::forward<TArgs>(args)..., parTbb);
-            #endif
-            break;
-        }
-        case ParallelMode::TBB_VEC:
-        {
-            #if !defined(SEQAN_TBB)
-                SEQAN_ASSERT_FAIL("TBB not enabled.");
-            #else
-                options.stats.execPolicy = "par_tbb_vec";
-                options.stats.vectorLength = SEQAN_SIZEOF_MAX_VECTOR / static_cast<unsigned>(options.simdWidth);
-                invoke(options, std::forward<TArgs>(args)..., parTbbVec);
-            #endif
+            options.stats.execPolicy = "wavefront_vec";
+            options.stats.vectorLength = SEQAN_SIZEOF_MAX_VECTOR / static_cast<unsigned>(options.simdWidth);
+            SEQAN_ASSERT_FAIL("Not implemented yet");
+//            seqan::ExecutionPolicy<seqan::WavefrontAlignment<>, seqan::Vectorial> wavePolicy;
+//            invoke(options, std::forward<TArgs>(args)..., wavePolicy);
             break;
         }
         default:
         {
-            SEQAN_ASSERT(options.parMode == ParallelMode::SERIAL);
-            options.stats.execPolicy = "serial";
-            invoke(options, std::forward<TArgs>(args)..., ser);
+            SEQAN_ASSERT(options.parMode == ParallelMode::SEQUENTIAL);
+            options.stats.execPolicy = "sequential";
+            invoke(options, std::forward<TArgs>(args)..., seq);
         }
     }
 }
@@ -238,16 +240,20 @@ template <typename TAlphabet>
 inline void
 configureAlpha(AlignBenchOptions & options)
 {
+    std::cout << "Generate sequences ...";
     SequenceGenerator<TAlphabet> gen;
-    gen.setNumber(1);
+    gen.setNumber(options.numSequences);
+    gen.setDistribution(options.distFunction);
     gen.setMinLength(options.minSize);
     gen.setMaxLength(options.maxSize);
 
     auto seqSet1 = gen.generate();
     auto seqSet2 = gen.generate();
 
-    options.stats.seqHLength = length(seqSet1[0]);
-    options.stats.seqVLength = length(seqSet2[0]);
+    std::cout << "\t done.\n";
+
+    options.stats.seqHLength = length(seqSet1);
+    options.stats.seqVLength = length(seqSet2);
 
     switch(options.simdWidth)
     {
@@ -264,7 +270,7 @@ configureAlpha(AlignBenchOptions & options)
             break;
         case SimdIntegerWidth::BIT_64:
             options.stats.scoreValue = "int64_t";
-            configureScore<TAlphabet, int64_t>(options, seqSet1, seqSet2);
+//            configureScore<TAlphabet, int64_t>(options, seqSet1, seqSet2);
             break;
     }
 }
@@ -277,18 +283,18 @@ configure(AlignBenchOptions & options)
         options.stats.scoreAlpha = "dna";
         configureAlpha<Dna>(options);
     }
-    else
-    {
-        options.stats.scoreAlpha = "amino acid";
-        configureAlpha<AminoAcid>(options);
-    }
+//    else
+//    {
+//        options.stats.scoreAlpha = "amino acid";
+//        configureAlpha<AminoAcid>(options);
+//    }
 }
 
 int main(int argc, char* argv[])
 {
     AlignBenchOptions options;
 
-    if (parseCommandLine(options, argc, argv) != ArgumentParser::PARSE_OK)
+    if (parseCommandLine(options, argc, argv) != ArgumentParser::PARSE_OK) 
         return EXIT_FAILURE;
 
 // NOTE(rrahn): Later we might read from input files.

@@ -37,15 +37,19 @@
 
 #include <string>
 
+enum class DistributionFunction : uint8_t
+{
+    UNIFORM_DISTRIBUTION,
+    NORMAL_DISTRIBUTION,
+};
+
 enum class ParallelMode : uint8_t
 {
-    SERIAL,
-    NATIVE,
-    NATIVE_VEC,
-    OMP,
-    OMP_VEC,
-    TBB,
-    TBB_VEC
+    SEQUENTIAL,
+    PARALLEL,
+    PARALLEL_VEC,
+    WAVEFRONT,
+    WAVEFRONT_VEC
 };
 
 enum class SimdIntegerWidth : uint8_t
@@ -72,9 +76,11 @@ struct AlignBenchStats
     std::string             scoreAlpha;
     std::vector<size_t>     scores;
     double                  time;
-    size_t                  blockSize = 0;
-    size_t                  threads = 0;
-    size_t                  vectorLength = 0;
+
+    size_t                  blockSize{0};
+    size_t                  threads{0};
+    size_t                  parallelInstances{0};
+    size_t                  vectorLength{0};
 
     template <typename TStream>
     void writeStats(TStream & stream)
@@ -93,6 +99,8 @@ struct AlignBenchStats
             stream << "," << blockSize;
         if (threads != 0)
             stream << "," << threads;
+        if (parallelInstances != 0)
+            stream << "," << parallelInstances;
         if (vectorLength != 0)
             stream << "," << vectorLength;
         #ifdef DP_ALIGN_STATS
@@ -110,12 +118,17 @@ struct AlignBenchOptions
     std::string alignOut;
     unsigned rep;
     unsigned threadCount;
+    unsigned parallelInstances;
     unsigned blockSize;
+    unsigned numSequences;
     unsigned minSize;
     unsigned maxSize;
-    ParallelMode parMode = ParallelMode::SERIAL;
+    ParallelMode parMode = ParallelMode::SEQUENTIAL;
+
     SimdIntegerWidth simdWidth;
     ScoreAlphabet alpha;
+
+    DistributionFunction distFunction;
 
     AlignBenchStats stats;
 };

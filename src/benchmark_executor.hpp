@@ -36,7 +36,7 @@
 #define BENCHMARK_EXECUTOR_HPP_
 
 #include <seqan/basic.h>
-#include <seqan/align_parallel.h>
+#include <seqan/align_parallel_2.h>
 
 using namespace seqan;
 
@@ -152,7 +152,7 @@ public:
     inline void runGlobalAlignment(TSet1 const &, TSet2 const &, unsigned const, seqan::Parallel const &);
 
     template <typename TSet1, typename TSet2>
-    inline void runGlobalAlignment(TSet1 const &, TSet2 const &, unsigned const, seqan::Serial const &);
+    inline void runGlobalAlignment(TSet1 const &, TSet2 const &, unsigned const, seqan::Sequential const &);
 
     template <typename TSet1, typename TSet2, typename TScore, typename TParSpec, typename TVecSpec>
     inline void runGlobalAlignment(AlignBenchOptions &,
@@ -161,12 +161,19 @@ public:
                                    TScore const &,
                                    seqan::ExecutionPolicy<TParSpec, TVecSpec> &);
 
+    template <typename TSet1, typename TSet2, typename TScore, typename TParSpec, typename TVecSpec>
+    inline void runGlobalAlignment(AlignBenchOptions &,
+                                   TSet1 const &,
+                                   TSet2 const &,
+                                   TScore const &,
+                                   seqan::ExecutionPolicy<seqan::WavefrontAlignment<TParSpec>, TVecSpec> &);
+
     template <typename TSet1, typename TSet2, typename TScore>
     inline void runGlobalAlignment(AlignBenchOptions &,
                                    TSet1 const &,
                                    TSet2 const &,
                                    TScore const &,
-                                   seqan::ExecutionPolicy<seqan::Serial, seqan::Default> const &);
+                                   seqan::Sequential const &);
 
     template <typename TStream>
     inline void
@@ -268,7 +275,7 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
                                       TSet1 const & set1,
                                       TSet2 const & set2,
                                       TScore const & scoreMat,
-                                      seqan::ExecutionPolicy<seqan::Serial, seqan::Default> const & execPolicy)
+                                      seqan::Sequential const & execPolicy)
 {
     using TAlign = Align<typename Value<TSet1>::Type, ArrayGaps>;
 
@@ -292,13 +299,13 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
     start(mTimer); 
     for (unsigned i = 0; i < options.rep; ++i)
     {
-        auto score = globalAlignment(row(alignSet[0], 0), row(alignSet[0], 1), scoreMat);
+        auto score = globalAlignmentScore(source(row(alignSet[0], 0)), source(row(alignSet[0], 1)), scoreMat);
         options.stats.scores.push_back(score);
     }
     stop(mTimer);
 
 //    std::cout << "Score: " << score << '\n';
-    writeAlignment(options, alignSet[0]);
+//    writeAlignment(options, alignSet[0]);
 }
 
 template <typename TSet1, typename TSet2, typename TScore, typename TParSpec, typename TVecSpec>
@@ -309,37 +316,116 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
                                       TScore const & scoreMat,
                                       seqan::ExecutionPolicy<TParSpec, TVecSpec> & execPolicy)
 {
-    using TAlign = Align<typename Value<TSet1>::Type, ArrayGaps>;
+    // Current old interface!
+    SEQAN_ASSERT_EQ(length(set1), length(set2));
+    SEQAN_ASSERT_FAIL("Disabled");
 
+//    using TAlign = Align<typename Value<TSet1>::Type, ArrayGaps>;
+//    StringSet<TAlign> alignSet;
+//    resize(alignSet, length(set1), Exact());
+//
+//    auto zipView = makeZipView(alignSet, set1, set2);
+//
+//    for (auto tuple : zipView)
+//    {
+//        resize(rows(std::get<0>(tuple)), 2);
+//        assignSource(row(std::get<0>(tuple), 0), std::get<1>(tuple));
+//        assignSource(row(std::get<0>(tuple), 1), std::get<2>(tuple));
+//    }
+//
+//    setNumThreads(execPolicy, options.threadCount);
+//    options.stats.threads = options.threadCount;
+//    options.stats.blockSize = options.blockSize;
+////    unsigned score = MinValue<unsigned>::VALUE;
+//    setRep(mTimer, options.rep);
+//    start(mTimer);
+//    for (unsigned i = 0; i < options.rep; ++i)
+//    {
+//        std::cout << "i: " << i << '\n';
+//        auto score = parallelAlign(execPolicy, row(alignSet[0], 0), row(alignSet[0], 1), scoreMat, options.blockSize);
+//        options.stats.scores.push_back(score);
+//    }
+//    stop(mTimer);
+////    std::cout << "Score: " << score << '\n';
+//    writeAlignment(options, alignSet[0]);
+}
+
+struct DPGlobalAffineNoTrace : public seqan::DPTraits::GlobalAffine
+{
+    using TTracebackType = seqan::TracebackOff;
+};
+
+template <typename TSet1, typename TSet2, typename TScore, typename TParSpec, typename TVecSpec>
+inline void
+BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
+                                      TSet1 const & set1,
+                                      TSet2 const & set2,
+                                      TScore const & scoreMat,
+                                      seqan::ExecutionPolicy<seqan::WavefrontAlignment<TParSpec>, TVecSpec> & execPolicy)
+{
     // Current old interface!
     SEQAN_ASSERT_EQ(length(set1), length(set2));
 
-    StringSet<TAlign> alignSet;
-    resize(alignSet, length(set1), Exact());
+    setNumThreads(execPolicy, options.threadCount);
+    setParallelAlignments(execPolicy, options.parallelInstances);
+    setBlockSize(execPolicy, options.blockSize);
 
-    auto zipView = makeZipView(alignSet, set1, set2);
-
-    for (auto tuple : zipView)
-    {
-        resize(rows(std::get<0>(tuple)), 2);
-        assignSource(row(std::get<0>(tuple), 0), std::get<1>(tuple));
-        assignSource(row(std::get<0>(tuple), 1), std::get<2>(tuple));
-    }
-
-    execPolicy.numThreads = options.threadCount;
     options.stats.threads = options.threadCount;
+    options.stats.parallelInstances = options.parallelInstances;
     options.stats.blockSize = options.blockSize;
-//    unsigned score = MinValue<unsigned>::VALUE;
+
+    options.stats.writeStats(std::cout);
+
+    using TDPSettings = seqan::DPSettings<TScore, DPGlobalAffineNoTrace>;
+    TDPSettings settings;
+    settings.mScoringScheme = scoreMat;
+
+    std::vector<int> alignScores(length(set1), minValue<int>());
+
+
     setRep(mTimer, options.rep);
     start(mTimer);
-    for (unsigned i = 0; i < options.rep; ++i)
+
+    seqan::impl::alignExecBatch(execPolicy, set1, set2, settings,
+    [&](auto const id, auto const score)
     {
-        auto score = parallelAlign(execPolicy, row(alignSet[0], 0), row(alignSet[0], 1), scoreMat, options.blockSize);
+        alignScores[id] = score;
+//        std::cout << "Finished alignment " << id << " with score " << score << '\n';
+    });
+
+    std::for_each(std::begin(alignScores), std::end(alignScores), [&](auto score)
+    {
         options.stats.scores.push_back(score);
-    }
+    });
     stop(mTimer);
-//    std::cout << "Score: " << score << '\n';
-    writeAlignment(options, alignSet[0]);
+
+    //    StringSet<TAlign> alignSet;
+    //    resize(alignSet, length(set1), Exact());
+    //
+    //    auto zipView = makeZipView(alignSet, set1, set2);
+    //
+    //    for (auto tuple : zipView)
+    //    {
+    //        resize(rows(std::get<0>(tuple)), 2);
+    //        assignSource(row(std::get<0>(tuple), 0), std::get<1>(tuple));
+    //        assignSource(row(std::get<0>(tuple), 1), std::get<2>(tuple));
+    //    }
+    //
+    //    setNumThreads(execPolicy, options.threadCount);
+    //    options.stats.threads = options.threadCount;
+    //    options.stats.blockSize = options.blockSize;
+    ////    unsigned score = MinValue<unsigned>::VALUE;
+    //    setRep(mTimer, options.rep);
+    //    start(mTimer);
+    //    for (unsigned i = 0; i < options.rep; ++i)
+    //    {
+    //        std::cout << "i: " << i << '\n';
+    //        auto score = parallelAlign(execPolicy, row(alignSet[0], 0), row(alignSet[0], 1), scoreMat, options.blockSize);
+    //        options.stats.scores.push_back(score);
+    //    }
+    //    stop(mTimer);
+    ////    std::cout << "Score: " << score << '\n';
+    //    writeAlignment(options, alignSet[0]);
 }
 
 #endif  // #ifndef BENCHMARK_EXECUTOR_HPP_

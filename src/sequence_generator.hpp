@@ -40,17 +40,20 @@
 namespace seqan
 {
 
-template <typename TAlphabet = Dna>
+template <typename TAlphabet_ = Dna>
 class SequenceGenerator
 {
 public:
+
+    using TAlphabet = TAlphabet_;
 
     // ----------------------------------------------------------------------------
     // Constructor.
     // ----------------------------------------------------------------------------
 
     // Default c'tor. - Needed?
-    SequenceGenerator() : mSeed(-1), mMinLength(100), mMaxLength(1000), mNum(1)
+    SequenceGenerator() : mSeed(-1), mMinLength(100), mMaxLength(1000), mNum(1),
+                          mDist(DistributionFunction::UNIFORM_DISTRIBUTION)
     {
         mRng.seed(mSeed);
     }
@@ -75,19 +78,30 @@ public:
         mNum = size;
     }
 
+    inline void setDistribution(DistributionFunction dist)
+    {
+
+        mDist = dist;
+    }
+
     inline StringSet<String<TAlphabet> > generate();
 
 private:
+
+    template <typename TPdf>
+    inline auto generateImpl(TPdf & pdf);
+
 
     // ----------------------------------------------------------------------------
     // Internal member variables.
     // ----------------------------------------------------------------------------
 
-    unsigned        mSeed;
-    unsigned        mMinLength;
-    unsigned        mMaxLength;
-    unsigned        mNum;
-    std::mt19937    mRng;
+    unsigned                mSeed;
+    unsigned                mMinLength;
+    unsigned                mMaxLength;
+    unsigned                mNum;
+    DistributionFunction    mDist;
+    std::mt19937            mRng;
 };
 
 // ----------------------------------------------------------------------------
@@ -95,27 +109,42 @@ private:
 // ----------------------------------------------------------------------------
 
 template <typename TAlphabet>
-inline StringSet<String<TAlphabet> >
-SequenceGenerator<TAlphabet>::generate()
+template <typename TPdf>
+inline auto
+SequenceGenerator<TAlphabet>::generateImpl(TPdf & pdf)
 {
     StringSet<String<TAlphabet> > set;
+    resize(set, mNum, Exact());
 
-    resize(set, this->mNum, Exact());
-
-    // Sanity check.
-    if (this->mMaxLength < this->mMinLength)
-        this->mMaxLength = this->mMinLength;
-
-    std::uniform_int_distribution<> lenDis(this->mMinLength, this->mMaxLength);
     std::uniform_int_distribution<> charDis(0, ValueSize<TAlphabet>::VALUE - 1);
 
     for (auto& str : set)
     {
-        resize(str, lenDis(this->mRng), Exact());
+        resize(str, static_cast<size_t>(pdf(mRng)), Exact());
         for (auto& val : str)
             val = static_cast<TAlphabet>(charDis(this->mRng));
     }
     return set;
+}
+
+template <typename TAlphabet>
+inline StringSet<String<TAlphabet> >
+SequenceGenerator<TAlphabet>::generate()
+{
+    // Sanity check.
+    if (this->mMaxLength < this->mMinLength)
+        this->mMaxLength = this->mMinLength;
+
+    if (mDist == DistributionFunction::UNIFORM_DISTRIBUTION)
+    {
+        std::uniform_int_distribution<> lenDis(this->mMinLength, this->mMaxLength);
+        return generateImpl(lenDis);
+    }
+    else
+    {
+        std::normal_distribution<> lenDis((mMinLength + mMaxLength)/2, 1.0);
+        return generateImpl(lenDis);
+    }
 }
 
 }
