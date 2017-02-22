@@ -299,8 +299,11 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
     start(mTimer); 
     for (unsigned i = 0; i < options.rep; ++i)
     {
-        auto score = globalAlignmentScore(source(row(alignSet[0], 0)), source(row(alignSet[0], 1)), scoreMat);
-        options.stats.scores.push_back(score);
+        for (unsigned i = 0; i < length(set1); ++i)
+        {
+            auto score = globalAlignmentScore(set1[i], set2[i], scoreMat);
+            options.stats.scores.push_back(score);
+        }
     }
     stop(mTimer);
 
