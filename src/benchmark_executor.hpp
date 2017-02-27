@@ -377,8 +377,6 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
     options.stats.parallelInstances = options.parallelInstances;
     options.stats.blockSize = options.blockSize;
 
-    options.stats.writeStats(std::cout);
-
     using TDPSettings = seqan::DPSettings<TScore, DPGlobalAffineNoTrace>;
     TDPSettings settings;
     settings.mScoringScheme = scoreMat;

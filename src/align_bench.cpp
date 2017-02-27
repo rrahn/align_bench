@@ -212,8 +212,8 @@ inline void configureExec(AlignBenchOptions & options,
             options.stats.execPolicy = "wavefront_vec";
             options.stats.vectorLength = SEQAN_SIZEOF_MAX_VECTOR / static_cast<unsigned>(options.simdWidth);
             SEQAN_ASSERT_FAIL("Not implemented yet");
-//            seqan::ExecutionPolicy<seqan::WavefrontAlignment<>, seqan::Vectorial> wavePolicy;
-//            invoke(options, std::forward<TArgs>(args)..., wavePolicy);
+            seqan::ExecutionPolicy<seqan::WavefrontAlignment<>, seqan::Vectorial> wavePolicy;
+            invoke(options, std::forward<TArgs>(args)..., wavePolicy);
             break;
         }
         default:
@@ -252,8 +252,10 @@ configureAlpha(AlignBenchOptions & options)
 
     std::cout << "\t done.\n";
 
-    options.stats.seqHLength = length(seqSet1);
-    options.stats.seqVLength = length(seqSet2);
+    options.stats.numSequences = options.numSequences;
+    options.stats.seqMinLength = options.minSize;
+    options.stats.seqMaxLength = options.maxSize;
+    options.stats.dist         = (options.distFunction == DistributionFunction::NORMAL_DISTRIBUTION) ? "normal" : "uniform";
 
     switch(options.simdWidth)
     {
@@ -324,6 +326,7 @@ int main(int argc, char* argv[])
 
     configure(options);
     options.stats.state = "done";
+    options.stats.writeHeader(std::cout);
     options.stats.writeStats(std::cout);
 
     return EXIT_SUCCESS;

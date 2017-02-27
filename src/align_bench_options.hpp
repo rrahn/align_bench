@@ -70,8 +70,10 @@ struct AlignBenchStats
 {
     std::string             execPolicy;
     std::string             state;
-    size_t                  seqHLength;
-    size_t                  seqVLength;
+    size_t                  numSequences;
+    size_t                  seqMinLength;
+    size_t                  seqMaxLength;
+    std::string             dist;
     std::string             scoreValue;
     std::string             scoreAlpha;
     std::vector<size_t>     scores;
@@ -83,30 +85,65 @@ struct AlignBenchStats
     size_t                  vectorLength{0};
 
     template <typename TStream>
+    void writeHeader(TStream & stream)
+    {
+        stream << "Policy,";
+        stream << "State,";
+        stream << "#Seqs,";
+        stream << "SeqMin,";
+        stream << "SeqMax,";
+        stream << "Dist,";
+        stream << "BitsPerScore,";
+        stream << "Alphabet,";
+        stream << "Time,";
+        stream << "BlockSize,";
+        stream << "#Threads,";
+        stream << "#Instances,";
+        stream << "VectorSize,";
+        stream << "#SerialBlocks,";
+        stream << "#SimdBlocks,";
+        stream << "Results\n";
+    }
+
+    template <typename TStream>
     void writeStats(TStream & stream)
     {
+
         stream << execPolicy << "," <<
                   state << "," <<
-                  seqHLength << "," <<
-                  seqVLength << "," <<
+                  numSequences << "," <<
+                  seqMinLength << "," <<
+                  seqMaxLength << "," <<
+                  dist << "," <<
                   scoreValue << "," <<
                   scoreAlpha << ",";
-        for (auto val : scores)
-            stream << val << ",";
-
-        stream << time;
+        stream << time << ",";
         if (blockSize != 0)
-            stream << "," << blockSize;
+            stream << blockSize << ",";
+        else
+            stream << "n/a,";
         if (threads != 0)
-            stream << "," << threads;
+            stream << threads << ",";
+        else
+            stream << "n/a,";
         if (parallelInstances != 0)
-            stream << "," << parallelInstances;
+            stream << parallelInstances << ",";
+        else
+            stream << "n/a,";
         if (vectorLength != 0)
-            stream << "," << vectorLength;
+            stream << vectorLength << ",";
+        else
+            stream << "n/a,";
         #ifdef DP_ALIGN_STATS
-            stream << "," << serialCounter.load();
-            stream << "," << simdCounter.load();
+            stream << serialCounter.load() << "," ;
+            stream << simdCounter.load() << "," ;
+        #else
+            stream << "n/a,";
+            stream << "n/a,";
         #endif
+
+        for (auto val : scores)
+            stream << val << " ";
         stream << '\n';
     }
 };
