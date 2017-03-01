@@ -257,6 +257,13 @@ configureAlpha(AlignBenchOptions & options)
     options.stats.seqMaxLength = options.maxSize;
     options.stats.dist         = (options.distFunction == DistributionFunction::NORMAL_DISTRIBUTION) ? "normal" : "uniform";
 
+    options.stats.totalCells = 0;
+    for (unsigned i = 0; i < length(seqSet1); ++i)
+    {
+        options.stats.totalCells += (1+length(seqSet1[i]))*(1+length(seqSet2[i]));
+    }
+    options.stats.totalCells /= 1000000000.0;
+
     switch(options.simdWidth)
     {
         case SimdIntegerWidth::BIT_8:

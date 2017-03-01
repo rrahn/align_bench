@@ -73,6 +73,7 @@ struct AlignBenchStats
     size_t                  numSequences;
     size_t                  seqMinLength;
     size_t                  seqMaxLength;
+    double                  totalCells;
     std::string             dist;
     std::string             scoreValue;
     std::string             scoreAlpha;
@@ -92,10 +93,12 @@ struct AlignBenchStats
         stream << "#Seqs,";
         stream << "SeqMin,";
         stream << "SeqMax,";
+        stream << "#GCells,";
         stream << "Dist,";
         stream << "BitsPerScore,";
         stream << "Alphabet,";
         stream << "Time,";
+        stream << "GCUPS,";
         stream << "BlockSize,";
         stream << "#Threads,";
         stream << "#Instances,";
@@ -114,10 +117,12 @@ struct AlignBenchStats
                   numSequences << "," <<
                   seqMinLength << "," <<
                   seqMaxLength << "," <<
+                  totalCells << "," <<
                   dist << "," <<
                   scoreValue << "," <<
                   scoreAlpha << ",";
         stream << time << ",";
+        stream << (static_cast<double>(totalCells) / time) << ",";
         if (blockSize != 0)
             stream << blockSize << ",";
         else
