@@ -122,7 +122,7 @@ struct AlignBenchStats
                   scoreValue << "," <<
                   scoreAlpha << ",";
         stream << time << ",";
-        stream << (static_cast<double>(totalCells) / time) << ",";
+        stream << (static_cast<double>(totalCells) / time) / 1000000000.0 << ",";
         if (blockSize != 0)
             stream << blockSize << ",";
         else

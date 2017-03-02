@@ -262,7 +262,6 @@ configureAlpha(AlignBenchOptions & options)
     {
         options.stats.totalCells += (1+length(seqSet1[i]))*(1+length(seqSet2[i]));
     }
-    options.stats.totalCells /= 1000000000.0;
 
     switch(options.simdWidth)
     {
