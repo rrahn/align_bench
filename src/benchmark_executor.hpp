@@ -154,25 +154,32 @@ public:
     template <typename TSet1, typename TSet2>
     inline void runGlobalAlignment(TSet1 const &, TSet2 const &, unsigned const, seqan::Sequential const &);
 
-    template <typename TSet1, typename TSet2, typename TScore, typename TParSpec, typename TVecSpec>
+    template <typename TSet1, typename TSet2, typename TScore,
+              typename TMethod,
+              typename TParSpec, typename TVecSpec>
     inline void runGlobalAlignment(AlignBenchOptions &,
                                    TSet1 const &,
                                    TSet2 const &,
                                    TScore const &,
+                                   TMethod const &,
                                    seqan::ExecutionPolicy<TParSpec, TVecSpec> &);
 
-    template <typename TSet1, typename TSet2, typename TScore, typename TParSpec, typename TVecSpec>
+    template <typename TSet1, typename TSet2, typename TScore,
+              typename TMethod,
+              typename TParSpec, typename TVecSpec>
     inline void runGlobalAlignment(AlignBenchOptions &,
                                    TSet1 const &,
                                    TSet2 const &,
                                    TScore const &,
+                                   TMethod const &,
                                    seqan::ExecutionPolicy<seqan::WavefrontAlignment<TParSpec>, TVecSpec> &);
 
-    template <typename TSet1, typename TSet2, typename TScore>
+    template <typename TSet1, typename TSet2, typename TScore, typename TMethod>
     inline void runGlobalAlignment(AlignBenchOptions &,
                                    TSet1 const &,
                                    TSet2 const &,
                                    TScore const &,
+                                   TMethod const &,
                                    seqan::Sequential const &);
 
     template <typename TStream>
@@ -269,12 +276,13 @@ BenchmarkExecutor::runGlobalAlignment(TSet1 const & set1, TSet2 const & set2, un
 //    align(alignObj, Config<TTraits>(), ExecPolicy());
 }
 
-template <typename TSet1, typename TSet2, typename TScore>
+template <typename TSet1, typename TSet2, typename TScore, typename TMethod>
 inline void
 BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
                                       TSet1 const & set1,
                                       TSet2 const & set2,
                                       TScore const & scoreMat,
+                                      TMethod const &,
                                       seqan::Sequential const & execPolicy)
 {
     using TAlign = Align<typename Value<TSet1>::Type, ArrayGaps>;
@@ -311,12 +319,15 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
 //    writeAlignment(options, alignSet[0]);
 }
 
-template <typename TSet1, typename TSet2, typename TScore, typename TParSpec, typename TVecSpec>
+template <typename TSet1, typename TSet2, typename TScore,
+          typename TMethod,
+          typename TParSpec, typename TVecSpec>
 inline void
 BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
                                       TSet1 const & set1,
                                       TSet2 const & set2,
                                       TScore const & scoreMat,
+                                      TMethod const &,
                                       seqan::ExecutionPolicy<TParSpec, TVecSpec> & execPolicy)
 {
     // Current old interface!
@@ -353,17 +364,15 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
 //    writeAlignment(options, alignSet[0]);
 }
 
-struct DPGlobalAffineNoTrace : public seqan::DPTraits::GlobalAffine
-{
-    using TTracebackType = seqan::TracebackOff;
-};
-
-template <typename TSet1, typename TSet2, typename TScore, typename TParSpec, typename TVecSpec>
+template <typename TSet1, typename TSet2, typename TScore,
+          typename TMethod,
+          typename TParSpec, typename TVecSpec>
 inline void
 BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
                                       TSet1 const & set1,
                                       TSet2 const & set2,
                                       TScore const & scoreMat,
+                                      TMethod const &,
                                       seqan::ExecutionPolicy<seqan::WavefrontAlignment<TParSpec>, TVecSpec> & execPolicy)
 {
     // Current old interface!
@@ -377,12 +386,18 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
     options.stats.parallelInstances = options.parallelInstances;
     options.stats.blockSize = options.blockSize;
 
-    using TDPSettings = seqan::DPSettings<TScore, DPGlobalAffineNoTrace>;
+    struct DPConfigTraits : seqan::DPTraits::GlobalAffine
+    {
+        using TAlgorithmType = TMethod;
+        using TTracebackType = seqan::TracebackOff;
+    };
+
+    using TDPSettings = seqan::DPSettings<TScore, DPConfigTraits>;
+
     TDPSettings settings;
     settings.mScoringScheme = scoreMat;
 
     std::vector<int> alignScores(length(set1), minValue<int>());
-
 
     setRep(mTimer, options.rep);
     start(mTimer);

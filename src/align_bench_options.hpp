@@ -43,6 +43,13 @@ enum class DistributionFunction : uint8_t
     NORMAL_DISTRIBUTION,
 };
 
+enum class AlignMethod : uint8_t
+{
+    GLOBAL,
+    SEMIGLOBAL,
+    LOCAL
+};
+
 enum class ParallelMode : uint8_t
 {
     SEQUENTIAL,
@@ -75,6 +82,7 @@ struct AlignBenchStats
     size_t                  seqMaxLength;
     double                  totalCells;
     std::string             dist;
+    std::string             method;
     std::string             scoreValue;
     std::string             scoreAlpha;
     std::vector<size_t>     scores;
@@ -97,6 +105,7 @@ struct AlignBenchStats
         stream << "Dist,";
         stream << "BitsPerScore,";
         stream << "Alphabet,";
+        stream << "Method,";
         stream << "Time,";
         stream << "GCUPS,";
         stream << "BlockSize,";
@@ -112,15 +121,16 @@ struct AlignBenchStats
     void writeStats(TStream & stream)
     {
 
-        stream << execPolicy << "," <<
-                  state << "," <<
+        stream << execPolicy   << "," <<
+                  state        << "," <<
                   numSequences << "," <<
                   seqMinLength << "," <<
                   seqMaxLength << "," <<
-                  totalCells << "," <<
-                  dist << "," <<
-                  scoreValue << "," <<
-                  scoreAlpha << ",";
+                  totalCells   << "," <<
+                  dist         << "," <<
+                  scoreValue   << "," <<
+                  scoreAlpha   << "," <<
+                  method       << ",";
         stream << time << ",";
         stream << (static_cast<double>(totalCells) / time) / 1000000000.0 << ",";
         if (blockSize != 0)
@@ -165,6 +175,7 @@ struct AlignBenchOptions
     unsigned numSequences;
     unsigned minSize;
     unsigned maxSize;
+    AlignMethod  method;
     ParallelMode parMode = ParallelMode::SEQUENTIAL;
 
     SimdIntegerWidth simdWidth;

@@ -98,12 +98,16 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
     setValidValues(parser, "sw", "8 16 32 64");
     setDefaultValue(parser, "sw", "32");
 
-    addOption(parser, seqan::ArgParseOption("bs", "block-size", "Size of blocks", seqan::ArgParseArgument::INTEGER, "INT"));
+    addOption(parser, seqan::ArgParseOption("bs", "block-size", "Size of blocks", seqan::ArgParseArgument::INTEGER, "INTEGER"));
     setDefaultValue(parser, "bs", "100");
 
-    addOption(parser, seqan::ArgParseOption("sa", "score-alphabet", "Size of blocks", seqan::ArgParseArgument::STRING, "STR"));
+    addOption(parser, seqan::ArgParseOption("sa", "score-alphabet", "Size of blocks", seqan::ArgParseArgument::STRING, "STRING"));
     setValidValues(parser, "sa", "dna aminoacid");
     setDefaultValue(parser, "sa", "dna");
+
+    addOption(parser, seqan::ArgParseOption("m", "method", "Alignment method", seqan::ArgParseArgument::STRING, "STRING"));
+    setValidValues(parser, "m", "global semi local");
+    setDefaultValue(parser, "m", "global");
 
     // Parse command line.
     if (parse(parser, argc, argv) != ArgumentParser::PARSE_OK)
@@ -159,6 +163,16 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
         options.alpha = ScoreAlphabet::DNA;
     else
         options.alpha = ScoreAlphabet::AMINOACID;
+
+    if (getOptionValue(options.stats.method, parser, "m"))
+    {
+        if (options.stats.method == "global")
+            options.method = AlignMethod::GLOBAL;
+        else if (options.stats.method == "semiglobal")
+            options.method = AlignMethod::SEMIGLOBAL;
+        else if (options.stats.method == "local")
+            options.method = AlignMethod::LOCAL;
+        }
 
     getOptionValue(options.threadCount, parser, "t");
     getOptionValue(options.parallelInstances, parser, "p");
@@ -225,15 +239,34 @@ inline void configureExec(AlignBenchOptions & options,
     }
 }
 
+template <typename... TArgs>
+inline void
+configureMethod(AlignBenchOptions & options,
+                TArgs &&... args)
+{
+    switch (options.method)
+    {
+        case AlignMethod::GLOBAL:
+            configureExec(options, std::forward<TArgs>(args)..., GlobalAlignment_<>());
+            break;
+        case AlignMethod::LOCAL:
+            configureExec(options, std::forward<TArgs>(args)..., LocalAlignment_<>());
+            break;
+        case AlignMethod::SEMIGLOBAL:
+            configureExec(options, std::forward<TArgs>(args)..., GlobalAlignment_<seqan::FreeEndGaps_<True, False, True, False>>());
+            break;
+    }
+}
+
 template <typename TAlphabet, typename TScoreValue, typename... TArgs>
 inline void
 configureScore(AlignBenchOptions & options,
                TArgs &&... args)
 {
     if (IsSameType<TAlphabet, Dna>::VALUE)
-        configureExec(options, std::forward<TArgs>(args)..., Score<TScoreValue>(6, -4, -1 , -11));
+        configureMethod(options, std::forward<TArgs>(args)..., Score<TScoreValue>(6, -4, -1 , -11));
     else
-        configureExec(options, std::forward<TArgs>(args)..., Score<TScoreValue, ScoreMatrix<AminoAcid, ScoreSpecBlosum62> >(-1 , -11));
+        configureMethod(options, std::forward<TArgs>(args)..., Score<TScoreValue, ScoreMatrix<AminoAcid, ScoreSpecBlosum62> >(-1 , -11));
 }
 
 template <typename TAlphabet>
