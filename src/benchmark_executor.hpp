@@ -330,38 +330,48 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
                                       TMethod const &,
                                       seqan::ExecutionPolicy<TParSpec, TVecSpec> & execPolicy)
 {
-    // Current old interface!
-    SEQAN_ASSERT_EQ(length(set1), length(set2));
-    SEQAN_ASSERT_FAIL("Disabled");
+//    SEQAN_ASSERT_NOT(std::is_same<TMethod, seqan::LocalAlignment_<>>::value);
+    setNumThreads(execPolicy, options.threadCount);
+    //    setParallelAlignments(execPolicy, options.parallelInstances);
+    //    setBlockSize(execPolicy, options.blockSize);
 
-//    using TAlign = Align<typename Value<TSet1>::Type, ArrayGaps>;
-//    StringSet<TAlign> alignSet;
-//    resize(alignSet, length(set1), Exact());
-//
-//    auto zipView = makeZipView(alignSet, set1, set2);
-//
-//    for (auto tuple : zipView)
-//    {
-//        resize(rows(std::get<0>(tuple)), 2);
-//        assignSource(row(std::get<0>(tuple), 0), std::get<1>(tuple));
-//        assignSource(row(std::get<0>(tuple), 1), std::get<2>(tuple));
-//    }
-//
-//    setNumThreads(execPolicy, options.threadCount);
-//    options.stats.threads = options.threadCount;
-//    options.stats.blockSize = options.blockSize;
-////    unsigned score = MinValue<unsigned>::VALUE;
-//    setRep(mTimer, options.rep);
-//    start(mTimer);
-//    for (unsigned i = 0; i < options.rep; ++i)
-//    {
-//        std::cout << "i: " << i << '\n';
-//        auto score = parallelAlign(execPolicy, row(alignSet[0], 0), row(alignSet[0], 1), scoreMat, options.blockSize);
-//        options.stats.scores.push_back(score);
-//    }
-//    stop(mTimer);
-////    std::cout << "Score: " << score << '\n';
-//    writeAlignment(options, alignSet[0]);
+    options.stats.threads = options.threadCount;
+    //    options.stats.parallelInstances = options.parallelInstances;
+    //    options.stats.blockSize = options.blockSize;
+
+    std::vector<String<int>> alignScores(options.threadCount);
+
+    setRep(mTimer, options.rep);
+    start(mTimer);
+
+    auto chunkStringSet = [](auto const& infixSet)
+    {
+        using TSeq = typename std::decay<decltype(infixSet[0])>::type;
+        using TSet = seqan::StringSet<TSeq, seqan::Dependent<seqan::Tight>>;
+
+        TSet s;
+        for (unsigned i = 0; i < length(infixSet); ++i)
+        {
+            appendValue(s, infixSet[i]);
+        }
+        return s;
+    };
+
+    omp_set_num_threads(options.threadCount);
+    SEQAN_OMP_PRAGMA(parallel for shared(alignScores))
+    for (unsigned thread = 0; thread < options.threadCount; ++thread)
+    {
+        auto workSetH = infix(set1, thread * (length(set1)/options.threadCount),
+                              std::min(length(set1), (thread + 1) * (length(set1)/options.threadCount)));
+        auto workSetV = infix(set2, thread * (length(set2)/options.threadCount),
+                              std::min(length(set2), (thread + 1) * (length(set2)/options.threadCount)));
+
+        auto wH = chunkStringSet(workSetH);
+        auto wV = chunkStringSet(workSetV);
+
+        alignScores[thread] = globalAlignmentScore(wH, wV, scoreMat);
+    }
+    stop(mTimer);
 }
 
 template <typename TSet1, typename TSet2, typename TScore,
@@ -408,12 +418,13 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
         alignScores[id] = score;
 //        std::cout << "Finished alignment " << id << " with score " << score << '\n';
     });
+    stop(mTimer);
 
     std::for_each(std::begin(alignScores), std::end(alignScores), [&](auto score)
     {
         options.stats.scores.push_back(score);
     });
-    stop(mTimer);
+
 
     //    StringSet<TAlign> alignSet;
     //    resize(alignSet, length(set1), Exact());

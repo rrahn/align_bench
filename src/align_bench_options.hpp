@@ -77,7 +77,7 @@ struct AlignBenchStats
 {
     std::string             execPolicy;
     std::string             state;
-    size_t                  numSequences;
+    int                     numSequences;
     size_t                  seqMinLength;
     size_t                  seqMaxLength;
     double                  totalCells;
@@ -98,7 +98,7 @@ struct AlignBenchStats
     {
         stream << "Policy,";
         stream << "State,";
-        stream << "#Seqs,";
+        stream << "Simulated,";
         stream << "SeqMin,";
         stream << "SeqMax,";
         stream << "#GCells,";
@@ -165,14 +165,14 @@ struct AlignBenchStats
 
 struct AlignBenchOptions
 {
-    std::string inputFileOne;
-    std::string inputFileTwo;
+    std::string queryFile;
+    std::string databaseFile;
     std::string alignOut;
     unsigned rep;
     unsigned threadCount;
     unsigned parallelInstances;
     unsigned blockSize;
-    unsigned numSequences;
+    int      numSequences;
     unsigned minSize;
     unsigned maxSize;
     AlignMethod  method;

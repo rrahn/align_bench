@@ -59,21 +59,21 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
     setVersion(parser, SEQAN_APP_VERSION " [" SEQAN_REVISION "]");
     setDate(parser, SEQAN_DATE);
 
-//    addArgument(parser, ArgParseArgument(ArgParseArgument::INPUT_FILE, "SEQUENCE_FILE"));
-//    addArgument(parser, ArgParseArgument(ArgParseArgument::INPUT_FILE, "SEQUENCE_FILE"));
+    addArgument(parser, ArgParseArgument(ArgParseArgument::INPUT_FILE, "QUERY"));
+    addArgument(parser, ArgParseArgument(ArgParseArgument::INPUT_FILE, "DATABASE"));
+
     addOption(parser, seqan::ArgParseOption("o", "output", "Output file to write the alignment to.", seqan::ArgParseArgument::OUTPUT_FILE, "OUT"));
     setDefaultValue(parser, "o", "stdout");
 
-    addOption(parser, seqan::ArgParseOption("s", "sequences", "Number of sequences to be generated.", seqan::ArgParseArgument::INTEGER, "INT"));
-    setMinValue(parser, "s", "1");
-    setDefaultValue(parser, "s", "1");
+    addOption(parser, seqan::ArgParseOption("s", "simulate", "Number of sequences to be simulated.", seqan::ArgParseArgument::INTEGER, "INT"));
+    setDefaultValue(parser, "s", "-1");
 
     addOption(parser, seqan::ArgParseOption("ml", "min-length", "Minimal length of sequence.", seqan::ArgParseArgument::INTEGER, "INT"));
-    setMinValue(parser, "ml", "1000");
+//    setMinValue(parser, "ml", "1000");
     setDefaultValue(parser, "ml", "1000");
 
     addOption(parser, seqan::ArgParseOption("xl", "max-lenght", "Maximal length of sequence.", seqan::ArgParseArgument::INTEGER, "INT"));
-    setMinValue(parser, "xl", "1000");
+//    setMinValue(parser, "xl", "1000");
     setDefaultValue(parser, "xl", "1000");
 
     addOption(parser, seqan::ArgParseOption("d", "distribution-function", "The distribution functio to use.", seqan::ArgParseArgument::STRING, "PDF"));
@@ -113,8 +113,8 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
     if (parse(parser, argc, argv) != ArgumentParser::PARSE_OK)
         return ArgumentParser::PARSE_ERROR;
 
-//    getArgumentValue(options.inputFileOne, parser, 0);
-//    getArgumentValue(options.inputFileTwo, parser, 1);
+    getArgumentValue(options.queryFile, parser, 0);
+    getArgumentValue(options.databaseFile, parser, 1);
 
     getOptionValue(options.alignOut, parser, "o");
     getOptionValue(options.rep, parser, "r");
@@ -209,9 +209,11 @@ inline void configureExec(AlignBenchOptions & options,
         }
         case ParallelMode::PARALLEL_VEC:
         {
+            #if SEQAN_SIMD_ENABLED
             options.stats.execPolicy = "parallel_vec";
             options.stats.vectorLength = SEQAN_SIZEOF_MAX_VECTOR / static_cast<unsigned>(options.simdWidth);
             invoke(options, std::forward<TArgs>(args)..., parVec);
+            #endif
             break;
         }
         case ParallelMode::WAVEFRONT:
@@ -223,11 +225,13 @@ inline void configureExec(AlignBenchOptions & options,
         }
         case ParallelMode::WAVEFRONT_VEC:
         {
+            #if (SEQAN_SIMD_ENABLED)
             options.stats.execPolicy = "wavefront_vec";
             options.stats.vectorLength = SEQAN_SIZEOF_MAX_VECTOR / static_cast<unsigned>(options.simdWidth);
             SEQAN_ASSERT_FAIL("Not implemented yet");
             seqan::ExecutionPolicy<seqan::WavefrontAlignment<>, seqan::Vectorial> wavePolicy;
             invoke(options, std::forward<TArgs>(args)..., wavePolicy);
+            #endif
             break;
         }
         default:
@@ -258,60 +262,118 @@ configureMethod(AlignBenchOptions & options,
     }
 }
 
-template <typename TAlphabet, typename TScoreValue, typename... TArgs>
+template <typename TScoreValue, typename... TArgs>
 inline void
-configureScore(AlignBenchOptions & options,
+configureScore(Dna const & /*tag*/,
+               AlignBenchOptions & options,
                TArgs &&... args)
 {
-    if (IsSameType<TAlphabet, Dna>::VALUE)
-        configureMethod(options, std::forward<TArgs>(args)..., Score<TScoreValue>(6, -4, -1 , -11));
-    else
-        configureMethod(options, std::forward<TArgs>(args)..., Score<TScoreValue, ScoreMatrix<AminoAcid, ScoreSpecBlosum62> >(-1 , -11));
+    configureMethod(options, std::forward<TArgs>(args)..., Score<TScoreValue>(6, -4, -1 , -11));
+}
+
+template <typename TScoreValue, typename... TArgs>
+inline void
+configureScore(AminoAcid const & /*tag*/,
+               AlignBenchOptions & options,
+               TArgs &&... args)
+{
+    configureMethod(options, std::forward<TArgs>(args)..., Score<TScoreValue, ScoreMatrix<AminoAcid, ScoreSpecBlosum62> >(-1 , -11));
 }
 
 template <typename TAlphabet>
 inline void
 configureAlpha(AlignBenchOptions & options)
 {
-    std::cout << "Generate sequences ...";
-    SequenceGenerator<TAlphabet> gen;
-    gen.setNumber(options.numSequences);
-    gen.setDistribution(options.distFunction);
-    gen.setMinLength(options.minSize);
-    gen.setMaxLength(options.maxSize);
-
-    auto seqSet1 = gen.generate();
-    auto seqSet2 = gen.generate();
-
-    std::cout << "\t done.\n";
-
-    options.stats.numSequences = options.numSequences;
-    options.stats.seqMinLength = options.minSize;
-    options.stats.seqMaxLength = options.maxSize;
-    options.stats.dist         = (options.distFunction == DistributionFunction::NORMAL_DISTRIBUTION) ? "normal" : "uniform";
+    // If option for generating is specified.
+    StringSet<String<TAlphabet>> seqSet1;
+    StringSet<String<TAlphabet>> seqSet2;
 
     options.stats.totalCells = 0;
-    for (unsigned i = 0; i < length(seqSet1); ++i)
+    if (options.numSequences != -1)
     {
-        options.stats.totalCells += (1+length(seqSet1[i]))*(1+length(seqSet2[i]));
+        std::cout << "Generate sequences ...";
+        SequenceGenerator<TAlphabet> gen;
+        gen.setNumber(options.numSequences);
+        gen.setDistribution(options.distFunction);
+        gen.setMinLength(options.minSize);
+        gen.setMaxLength(options.maxSize);
+
+
+        seqSet1 = gen.generate();
+        seqSet2 = gen.generate();
+
+        options.stats.numSequences = options.numSequences;
+        options.stats.seqMinLength = options.minSize;
+        options.stats.seqMaxLength = options.maxSize;
+        options.stats.dist         = (options.distFunction == DistributionFunction::NORMAL_DISTRIBUTION) ? "normal" : "uniform";
+
+        for (unsigned i = 0; i < length(seqSet1); ++i)
+        {
+            options.stats.totalCells += (1+length(seqSet1[i]))*(1+length(seqSet2[i]));
+        }
+    } else
+    {
+        StringSet<CharString> meta1;
+        StringSet<CharString> meta2;
+
+        StringSet<String<TAlphabet>> tmp1;
+        StringSet<String<TAlphabet>> tmp2;
+        try {
+            SeqFileIn queryFile{options.queryFile.c_str()};
+            readRecords(meta1, tmp1, queryFile);
+
+        } catch(...)
+        {
+            std::cerr << "Could not read query file" << std::endl;
+            return;
+        }
+
+        try {
+            SeqFileIn dbFile{options.databaseFile.c_str()};
+            readRecords(meta2, tmp2, dbFile);
+
+        } catch(...)
+        {
+            std::cerr << "Database: " << options.databaseFile << "\n";
+            std::cerr << "Could not read database file" << std::endl;
+            return;
+        }
+
+        std::sort(begin(tmp1, Standard()), end(tmp1, Standard()), [](auto const & s1, auto const & s2){ return length(s1) < length(s2); });
+        std::sort(begin(tmp2, Standard()), end(tmp2, Standard()), [](auto const & s1, auto const & s2){ return length(s1) < length(s2); });
+
+        options.stats.seqMinLength = length(seqSet1);
+        options.stats.seqMaxLength = length(seqSet2);
+
+        for (unsigned i = 0; i < length(tmp1); ++i)
+        {
+            for (unsigned j = 0; j < length(tmp2); ++j)
+            {
+                appendValue(seqSet1, tmp1[i]);
+                appendValue(seqSet2, tmp2[j]);
+                options.stats.totalCells += (1+length(tmp1[i]))*(1+length(tmp2[j]));
+            }
+        }
+        options.stats.numSequences = length(seqSet1);
     }
+
+    std::cout << "\t done.\n";
 
     switch(options.simdWidth)
     {
         case SimdIntegerWidth::BIT_8:
             std::cerr << "8 bit values not supported. Continue with 16 bit values.\n";
-            break;
         case SimdIntegerWidth::BIT_16:
             options.stats.scoreValue = "int16_t";
-            configureScore<TAlphabet, int16_t>(options, seqSet1, seqSet2);
+            configureScore<int16_t>(TAlphabet(), options, seqSet1, seqSet2);
             break;
         case SimdIntegerWidth::BIT_32:
             options.stats.scoreValue = "int32_t";
-            configureScore<TAlphabet, int32_t>(options, seqSet1, seqSet2);
+            configureScore<int32_t>(TAlphabet(), options, seqSet1, seqSet2);
             break;
         case SimdIntegerWidth::BIT_64:
             options.stats.scoreValue = "int64_t";
-//            configureScore<TAlphabet, int64_t>(options, seqSet1, seqSet2);
+//            configureScore<int64_t>(TAlphabet(), options, seqSet1, seqSet2);
             break;
     }
 }
@@ -324,11 +386,11 @@ configure(AlignBenchOptions & options)
         options.stats.scoreAlpha = "dna";
         configureAlpha<Dna>(options);
     }
-//    else
-//    {
-//        options.stats.scoreAlpha = "amino acid";
+    else
+    {
+        options.stats.scoreAlpha = "amino acid";
 //        configureAlpha<AminoAcid>(options);
-//    }
+    }
 }
 
 int main(int argc, char* argv[])
@@ -337,15 +399,6 @@ int main(int argc, char* argv[])
 
     if (parseCommandLine(options, argc, argv) != ArgumentParser::PARSE_OK) 
         return EXIT_FAILURE;
-
-// NOTE(rrahn): Later we might read from input files.
-//    SeqFileIn seqFileOne;
-//    if (!open(seqFileOne, options.inputFileOne.c_str()))
-//    {
-//        std::cerr << "Could not open file: " <<
-//    }
-//    loadSequence(setLeft, options.inputFileOne.c_str());
-//    loadSequence(setRight, options.inputFileTwo.c_str());
 
 //    seqSet1[0] = "ATGTGTTACTGGGAGTAGGTTCTCCACTCTCTTCCAGTTAGGCTTGTAAGCGCTAATCGTTCTTGGGAAAGCCGGCTAAACCTTTGGACCAGCTGCAGCGGTATGATGTTTCTCAGAATCTATCGGGAAACAAGACACTCGGCATTTTATTGGTACGACCATTAAGGGTGCTTTGGATTTGGTCAGGACGTCAGTGTAACGACGGATCGCCCACAGCGATCTTGTATCTCGGGGACTCGAAACCCAGAACAATTCATCTATTACCGGCAAACGACGAGCGGGCCAAGCTGGCATTAGCCCGATAACAAAGACCTCGATC";
 //    seqSet2[0] = "TAACAGGTATTGTAGCGTTTAAAGGCTCGAGTCACAGACATGATATAAGATTGGTCTGTAACTGGGCATTCTGAAAGCAAAACAATCCAGTATAATGGTGGTAGGGTGTTTGATTGAAGGTAGAGTAGTTACATCCGTCACGCACGCCTACCATTGGACAAAGGGCGCTCGTACCTTCTGTTTGTCGTTATCACGAGATGGGACTCGCAAATCAGACCTTCTCTTAGGGTCTTTACGTCTGTCAGAACAGATCTGTTCCACTTTTGGTCGCATTTGGCAAGCTGGAAGCGAATTGGGGACCATAATAAATGCGATTGGTG";
