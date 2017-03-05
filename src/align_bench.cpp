@@ -63,7 +63,7 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
     addArgument(parser, ArgParseArgument(ArgParseArgument::INPUT_FILE, "DATABASE"));
 
     addOption(parser, seqan::ArgParseOption("o", "output", "Output file to write the alignment to.", seqan::ArgParseArgument::OUTPUT_FILE, "OUT"));
-    setDefaultValue(parser, "o", "stdout");
+    setDefaultValue(parser, "o", "align_bench_res.csv");
 
     addOption(parser, seqan::ArgParseOption("s", "simulate", "Number of sequences to be simulated.", seqan::ArgParseArgument::INTEGER, "INT"));
     setDefaultValue(parser, "s", "-1");

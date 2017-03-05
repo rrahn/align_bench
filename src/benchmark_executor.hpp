@@ -224,6 +224,31 @@ inline void writeAlignment(AlignBenchOptions const & options,
     alignOut.close();
 }
 
+template <typename TStream, typename TResultVec>
+inline void writeScores_(TStream & stream,
+                        TResultVec const & vec)
+{
+    std::for_each(std::begin(vec), std::end(vec), [&](auto & sc) { stream << sc << ","; });
+    stream << "\n";
+}
+
+inline void writeScores(AlignBenchOptions const & options)
+{
+    if (options.alignOut == "stdout")
+    {
+        writeScores_(std::cout, options.stats.scores);
+    } else
+    {
+        std::ofstream alignOut;
+        alignOut.open(options.alignOut.c_str());
+        if (!alignOut.good())
+        {
+            std::cerr << "Could not open file << " << options.alignOut.c_str() << ">>!" << std::endl;
+            return;
+        }
+        writeScores_(alignOut, options.stats.scores);
+    }
+}
 
 template <typename TSet1, typename TSet2>
 inline void
@@ -314,7 +339,7 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
         }
     }
     stop(mTimer);
-
+    writeScores(options);
 //    std::cout << "Score: " << score << '\n';
 //    writeAlignment(options, alignSet[0]);
 }
@@ -341,9 +366,6 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
 
     std::vector<String<int>> alignScores(options.threadCount);
 
-    setRep(mTimer, options.rep);
-    start(mTimer);
-
     auto chunkStringSet = [](auto const& infixSet)
     {
         using TSeq = typename std::decay<decltype(infixSet[0])>::type;
@@ -357,6 +379,8 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
         return s;
     };
 
+    setRep(mTimer, options.rep);
+    start(mTimer);
     omp_set_num_threads(options.threadCount);
     SEQAN_OMP_PRAGMA(parallel for shared(alignScores))
     for (unsigned thread = 0; thread < options.threadCount; ++thread)
@@ -372,6 +396,13 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
         alignScores[thread] = globalAlignmentScore(wH, wV, scoreMat);
     }
     stop(mTimer);
+
+    for (unsigned i = 0; i < options.threadCount; ++i)
+    {
+        for (unsigned j = 0; j < length(alignScores[i]); ++j)
+            options.stats.scores.push_back(alignScores[i][j]);
+    }
+    writeScores(options);
 }
 
 template <typename TSet1, typename TSet2, typename TScore,
@@ -407,7 +438,7 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
     TDPSettings settings;
     settings.mScoringScheme = scoreMat;
 
-    std::vector<int> alignScores(length(set1), minValue<int>());
+    options.stats.scores.resize(length(set1), minValue<int>());
 
     setRep(mTimer, options.rep);
     start(mTimer);
@@ -415,15 +446,12 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
     seqan::impl::alignExecBatch(execPolicy, set1, set2, settings,
     [&](auto const id, auto const score)
     {
-        alignScores[id] = score;
+        options.stats.scores[id] = score;
 //        std::cout << "Finished alignment " << id << " with score " << score << '\n';
     });
     stop(mTimer);
 
-    std::for_each(std::begin(alignScores), std::end(alignScores), [&](auto score)
-    {
-        options.stats.scores.push_back(score);
-    });
+    writeScores(options);
 
 
     //    StringSet<TAlign> alignSet;

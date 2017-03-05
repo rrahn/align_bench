@@ -85,7 +85,7 @@ struct AlignBenchStats
     std::string             method;
     std::string             scoreValue;
     std::string             scoreAlpha;
-    std::vector<size_t>     scores;
+    std::vector<int32_t>    scores;
     double                  time;
 
     size_t                  blockSize{0};
@@ -113,8 +113,8 @@ struct AlignBenchStats
         stream << "#Instances,";
         stream << "VectorSize,";
         stream << "#SerialBlocks,";
-        stream << "#SimdBlocks,";
-        stream << "Results\n";
+        stream << "#SimdBlocks\n";
+//        stream << "Results\n";
     }
 
     template <typename TStream>
@@ -151,14 +151,14 @@ struct AlignBenchStats
             stream << "n/a,";
         #ifdef DP_ALIGN_STATS
             stream << serialCounter.load() << "," ;
-            stream << simdCounter.load() << "," ;
+            stream << simdCounter.load();
         #else
             stream << "n/a,";
-            stream << "n/a,";
+            stream << "n/a";
         #endif
 
-        for (auto val : scores)
-            stream << val << " ";
+//        for (auto val : scores)
+//            stream << val << " ";
         stream << '\n';
     }
 };
