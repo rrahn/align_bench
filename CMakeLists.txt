@@ -22,6 +22,14 @@ message (STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 message (STATUS "SEQAN_INCLUDE_PATH: ${SEQAN_INCLUDE_PATH}")
 
 # ----------------------------------------------------------------------------
+# Prepare global variables
+# ----------------------------------------------------------------------------
+
+option (USE_UME_SIMD "Use UME::Simd if available." OFF)
+
+option (BLOCK_OFFSET_OPTIMIZATION "Select block offset optimization." OFF)
+
+# ----------------------------------------------------------------------------
 # Include Src Directory
 # ----------------------------------------------------------------------------
 

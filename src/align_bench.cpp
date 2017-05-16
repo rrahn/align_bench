@@ -209,7 +209,7 @@ inline void configureExec(AlignBenchOptions & options,
         }
         case ParallelMode::PARALLEL_VEC:
         {
-            #if SEQAN_SIMD_ENABLED
+            #ifdef SEQAN_SIMD_ENABLED
             options.stats.execPolicy = "parallel_vec";
             options.stats.vectorLength = SEQAN_SIZEOF_MAX_VECTOR / static_cast<unsigned>(options.simdWidth);
             invoke(options, std::forward<TArgs>(args)..., parVec);
@@ -225,11 +225,14 @@ inline void configureExec(AlignBenchOptions & options,
         }
         case ParallelMode::WAVEFRONT_VEC:
         {
-            #if (SEQAN_SIMD_ENABLED)
+            #ifdef SEQAN_SIMD_ENABLED
             options.stats.execPolicy = "wavefront_vec";
             options.stats.vectorLength = SEQAN_SIZEOF_MAX_VECTOR / static_cast<unsigned>(options.simdWidth);
-            SEQAN_ASSERT_FAIL("Not implemented yet");
+            #if defined(SEQAN_BLOCK_OFFSET_OPTIMIZATION)
+            seqan::ExecutionPolicy<seqan::WavefrontAlignment<BlockOffsetOptimization>, seqan::Vectorial> wavePolicy;
+            #else
             seqan::ExecutionPolicy<seqan::WavefrontAlignment<>, seqan::Vectorial> wavePolicy;
+            #endif // defined(SEQAN_BLOCK_OFFSET_OPTIMIZATION)
             invoke(options, std::forward<TArgs>(args)..., wavePolicy);
             #endif
             break;
@@ -331,7 +334,10 @@ configureAlpha(AlignBenchOptions & options)
         try {
             SeqFileIn dbFile{options.databaseFile.c_str()};
             readRecords(meta2, tmp2, dbFile);
-
+        } catch(ParseError & e)
+        {
+            std::cerr << e.what() << std::endl;
+            return;
         } catch(...)
         {
             std::cerr << "Database: " << options.databaseFile << "\n";
@@ -397,7 +403,7 @@ int main(int argc, char* argv[])
 {
     AlignBenchOptions options;
 
-    if (parseCommandLine(options, argc, argv) != ArgumentParser::PARSE_OK) 
+    if (parseCommandLine(options, argc, argv) != ArgumentParser::PARSE_OK)
         return EXIT_FAILURE;
 
 //    seqSet1[0] = "ATGTGTTACTGGGAGTAGGTTCTCCACTCTCTTCCAGTTAGGCTTGTAAGCGCTAATCGTTCTTGGGAAAGCCGGCTAAACCTTTGGACCAGCTGCAGCGGTATGATGTTTCTCAGAATCTATCGGGAAACAAGACACTCGGCATTTTATTGGTACGACCATTAAGGGTGCTTTGGATTTGGTCAGGACGTCAGTGTAACGACGGATCGCCCACAGCGATCTTGTATCTCGGGGACTCGAAACCCAGAACAATTCATCTATTACCGGCAAACGACGAGCGGGCCAAGCTGGCATTAGCCCGATAACAAAGACCTCGATC";

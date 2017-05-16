@@ -329,7 +329,7 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
 
 //    unsigned score = MinValue<unsigned>::VALUE;
     setRep(mTimer, options.rep);
-    start(mTimer); 
+    start(mTimer);
     for (unsigned i = 0; i < options.rep; ++i)
     {
         for (unsigned i = 0; i < length(set1); ++i)
@@ -381,6 +381,7 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
 
     setRep(mTimer, options.rep);
     start(mTimer);
+
     omp_set_num_threads(options.threadCount);
     SEQAN_OMP_PRAGMA(parallel for shared(alignScores))
     for (unsigned thread = 0; thread < options.threadCount; ++thread)
