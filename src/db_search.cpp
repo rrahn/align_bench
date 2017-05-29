@@ -52,36 +52,17 @@ auto toString = [](auto elem)
 inline ArgumentParser::ParseResult
 parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
 {
-    ArgumentParser parser("align_bench");
+    ArgumentParser parser("db_search");
 
-    setShortDescription(parser, "Alignment Benchmark Tool");
+    setShortDescription(parser, "Database search using naive search with dynamic programming.");
     setVersion(parser, SEQAN_APP_VERSION " [" SEQAN_REVISION "]");
     setDate(parser, SEQAN_DATE);
 
-    addArgument(parser, ArgParseArgument(ArgParseArgument::INPUT_FILE, "QUERY"));
     addArgument(parser, ArgParseArgument(ArgParseArgument::INPUT_FILE, "DATABASE"));
+    addArgument(parser, ArgParseArgument(ArgParseArgument::INPUT_FILE, "QUERY"));
 
     addOption(parser, seqan::ArgParseOption("o", "output", "Output file to write the alignment to.", seqan::ArgParseArgument::OUTPUT_FILE, "OUT"));
     setDefaultValue(parser, "o", "align_bench_res.csv");
-
-    addOption(parser, seqan::ArgParseOption("s", "simulate", "Number of sequences to be simulated.", seqan::ArgParseArgument::INTEGER, "INT"));
-    setDefaultValue(parser, "s", "-1");
-
-    addOption(parser, seqan::ArgParseOption("ml", "min-length", "Minimal length of sequence.", seqan::ArgParseArgument::INTEGER, "INT"));
-//    setMinValue(parser, "ml", "1000");
-    setDefaultValue(parser, "ml", "1000");
-
-    addOption(parser, seqan::ArgParseOption("xl", "max-lenght", "Maximal length of sequence.", seqan::ArgParseArgument::INTEGER, "INT"));
-//    setMinValue(parser, "xl", "1000");
-    setDefaultValue(parser, "xl", "1000");
-
-    addOption(parser, seqan::ArgParseOption("d", "distribution-function", "The distribution functio to use.", seqan::ArgParseArgument::STRING, "PDF"));
-    setValidValues(parser, "d", "uniform normal");
-    setDefaultValue(parser, "d", "uniform");
-
-    addOption(parser, seqan::ArgParseOption("r", "repetition", "Number of repeated runs.", seqan::ArgParseArgument::INTEGER, "INT"));
-    setMinValue(parser, "r", "1");
-    setDefaultValue(parser, "r", "1");
 
     addOption(parser, seqan::ArgParseOption("e", "execution-mode", "Parallelization strategy. If not set, execution is forced to serial mode", seqan::ArgParseArgument::STRING, "STR"));
     setValidValues(parser, "e", "seq par par_vec wave wave_vec");
@@ -93,16 +74,16 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
     setMinValue(parser, "p", "1");
     setDefaultValue(parser, "p", toString(std::thread::hardware_concurrency() << 1));
 
-    addOption(parser, seqan::ArgParseOption("sw", "score-width", "Width of integers in bits used for score", seqan::ArgParseArgument::STRING, "STR"));
-    setValidValues(parser, "sw", "8 16 32 64");
-    setDefaultValue(parser, "sw", "32");
+    addOption(parser, seqan::ArgParseOption("s", "score-width", "Width of integers in bits used for score", seqan::ArgParseArgument::STRING, "STR"));
+    setValidValues(parser, "s", "16 32 64");
+    setDefaultValue(parser, "s", "32");
 
-    addOption(parser, seqan::ArgParseOption("bs", "block-size", "Size of blocks", seqan::ArgParseArgument::INTEGER, "INTEGER"));
-    setDefaultValue(parser, "bs", "100");
+    addOption(parser, seqan::ArgParseOption("b", "block-size", "Size of blocks", seqan::ArgParseArgument::INTEGER, "INTEGER"));
+    setDefaultValue(parser, "b", "100");
 
-    addOption(parser, seqan::ArgParseOption("sa", "score-alphabet", "Size of blocks", seqan::ArgParseArgument::STRING, "STRING"));
-    setValidValues(parser, "sa", "dna aminoacid");
-    setDefaultValue(parser, "sa", "dna");
+    addOption(parser, seqan::ArgParseOption("a", "score-alphabet", "Size of blocks", seqan::ArgParseArgument::STRING, "STRING"));
+    setValidValues(parser, "a", "dna aa");
+    setDefaultValue(parser, "a", "dna");
 
     addOption(parser, seqan::ArgParseOption("m", "method", "Alignment method", seqan::ArgParseArgument::STRING, "STRING"));
     setValidValues(parser, "m", "global semi local");
@@ -112,14 +93,10 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
     if (parse(parser, argc, argv) != ArgumentParser::PARSE_OK)
         return ArgumentParser::PARSE_ERROR;
 
-    getArgumentValue(options.queryFile, parser, 0);
-    getArgumentValue(options.databaseFile, parser, 1);
+    getArgumentValue(options.databaseFile, parser, 0);
+    getArgumentValue(options.queryFile, parser, 1);
 
     getOptionValue(options.alignOut, parser, "o");
-    getOptionValue(options.rep, parser, "r");
-    getOptionValue(options.numSequences, parser, "s");
-    getOptionValue(options.minSize, parser, "ml");
-    getOptionValue(options.maxSize, parser, "xl");
 
     std::string tmp;
     if (getOptionValue(tmp, parser, "e"))
@@ -136,20 +113,9 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
             options.parMode = ParallelMode::WAVEFRONT_VEC;
     }
 
-    clear(tmp);
-    if (getOptionValue(tmp, parser, "d"))
-    {
-        if (tmp == "normal")
-            options.distFunction = DistributionFunction::NORMAL_DISTRIBUTION;
-        else if (tmp == "uniform")
-            options.distFunction = DistributionFunction::UNIFORM_DISTRIBUTION;
-    }
-
     std::string bitWidth;
-    getOptionValue(bitWidth, parser, "sw");
-    if (bitWidth == "8")
-        options.simdWidth = SimdIntegerWidth::BIT_8;
-    else if (bitWidth == "16")
+    getOptionValue(bitWidth, parser, "s");
+    if (bitWidth == "16")
         options.simdWidth = SimdIntegerWidth::BIT_16;
     else if (bitWidth == "32")
         options.simdWidth = SimdIntegerWidth::BIT_32;
@@ -157,7 +123,7 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
         options.simdWidth = SimdIntegerWidth::BIT_64;
 
     std::string alpha;
-    getOptionValue(alpha, parser, "sa");
+    getOptionValue(alpha, parser, "a");
     if (alpha == "dna")
         options.alpha = ScoreAlphabet::DNA;
     else
@@ -177,7 +143,7 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
     getOptionValue(options.parallelInstances, parser, "p");
 
     // Read block size.
-    getOptionValue(options.blockSize, parser, "bs");
+    getOptionValue(options.blockSize, parser, "b");
 
     return ArgumentParser::PARSE_OK;
 }
@@ -203,7 +169,7 @@ inline void configureExec(AlignBenchOptions & options,
         case ParallelMode::PARALLEL:
         {
             options.stats.execPolicy = "parallel";
-            invoke(options, std::forward<TArgs>(args)..., par);
+            // invoke(options, std::forward<TArgs>(args)..., par);
             break;
         }
         case ParallelMode::PARALLEL_VEC:
@@ -211,7 +177,7 @@ inline void configureExec(AlignBenchOptions & options,
             #ifdef SEQAN_SIMD_ENABLED
             options.stats.execPolicy = "parallel_vec";
             options.stats.vectorLength = SEQAN_SIZEOF_MAX_VECTOR / static_cast<unsigned>(options.simdWidth);
-            invoke(options, std::forward<TArgs>(args)..., parVec);
+            // invoke(options, std::forward<TArgs>(args)..., parVec);
             #endif
             break;
         }
@@ -240,7 +206,7 @@ inline void configureExec(AlignBenchOptions & options,
         {
             SEQAN_ASSERT(options.parMode == ParallelMode::SEQUENTIAL);
             options.stats.execPolicy = "sequential";
-            invoke(options, std::forward<TArgs>(args)..., seq);
+            // invoke(options, std::forward<TArgs>(args)..., seq);
         }
     }
 }
@@ -256,10 +222,10 @@ configureMethod(AlignBenchOptions & options,
             configureExec(options, std::forward<TArgs>(args)..., GlobalAlignment_<>());
             break;
         case AlignMethod::LOCAL:
-            configureExec(options, std::forward<TArgs>(args)..., LocalAlignment_<>());
+            // configureExec(options, std::forward<TArgs>(args)..., LocalAlignment_<>());
             break;
         case AlignMethod::SEMIGLOBAL:
-            configureExec(options, std::forward<TArgs>(args)..., GlobalAlignment_<seqan::FreeEndGaps_<True, False, True, False>>());
+            // configureExec(options, std::forward<TArgs>(args)..., GlobalAlignment_<seqan::FreeEndGaps_<True, False, True, False>>());
             break;
     }
 }
@@ -291,95 +257,101 @@ configureAlpha(AlignBenchOptions & options)
     StringSet<String<TAlphabet>> seqSet2;
 
     options.stats.totalCells = 0;
-    if (options.numSequences != -1)
+
+    StringSet<CharString> meta1;
+    StringSet<CharString> meta2;
+
+    // read query.
+    try {
+        std::cout << "Reading query";
+        SeqFileIn queryFile{options.queryFile.c_str()};
+        readRecords(meta1, seqSet2, queryFile);
+    } catch(...)
     {
-        std::cout << "Generate sequences ...";
-        SequenceGenerator<TAlphabet> gen;
-        gen.setNumber(options.numSequences);
-        gen.setDistribution(options.distFunction);
-        gen.setMinLength(options.minSize);
-        gen.setMaxLength(options.maxSize);
-
-
-        seqSet1 = gen.generate();
-        seqSet2 = gen.generate();
-
-        options.stats.numSequences = options.numSequences;
-        options.stats.seqMinLength = options.minSize;
-        options.stats.seqMaxLength = options.maxSize;
-        options.stats.dist         = (options.distFunction == DistributionFunction::NORMAL_DISTRIBUTION) ? "normal" : "uniform";
-
-        for (unsigned i = 0; i < length(seqSet1); ++i)
-        {
-            options.stats.totalCells += (1+length(seqSet1[i]))*(1+length(seqSet2[i]));
-        }
-    } else
-    {
-        StringSet<CharString> meta1;
-        StringSet<CharString> meta2;
-
-        StringSet<String<TAlphabet>> tmp1;
-        StringSet<String<TAlphabet>> tmp2;
-        try {
-            SeqFileIn queryFile{options.queryFile.c_str()};
-            readRecords(meta1, tmp1, queryFile);
-
-        } catch(...)
-        {
-            std::cerr << "Could not read query file" << std::endl;
-            return;
-        }
-
-        try {
-            SeqFileIn dbFile{options.databaseFile.c_str()};
-            readRecords(meta2, tmp2, dbFile);
-        } catch(ParseError & e)
-        {
-            std::cerr << e.what() << std::endl;
-            return;
-        } catch(...)
-        {
-            std::cerr << "Database: " << options.databaseFile << "\n";
-            std::cerr << "Could not read database file" << std::endl;
-            return;
-        }
-
-        std::sort(begin(tmp1, Standard()), end(tmp1, Standard()), [](auto const & s1, auto const & s2){ return length(s1) < length(s2); });
-        std::sort(begin(tmp2, Standard()), end(tmp2, Standard()), [](auto const & s1, auto const & s2){ return length(s1) < length(s2); });
-
-        options.stats.seqMinLength = length(seqSet1);
-        options.stats.seqMaxLength = length(seqSet2);
-
-        for (unsigned i = 0; i < length(tmp1); ++i)
-        {
-            for (unsigned j = 0; j < length(tmp2); ++j)
-            {
-                appendValue(seqSet1, tmp1[i]);
-                appendValue(seqSet2, tmp2[j]);
-                options.stats.totalCells += (1+length(tmp1[i]))*(1+length(tmp2[j]));
-            }
-        }
-        options.stats.numSequences = length(seqSet1);
+        std::cerr << "\nCould not open or read  query file" << std::endl;
+        return;
     }
-    options.stats.numAlignments = length(seqSet1);
+    std::cout << " ... done\n";
+    // read database.
+    try {
+        std::cout << "Reading database";
+        SeqFileIn dbFile{options.databaseFile.c_str()};
+        readRecords(meta2, seqSet1, dbFile);
+    } catch(ParseError & e)
+    {
+        std::cerr << e.what() << std::endl;
+        return;
+    } catch(...)
+    {
+        std::cerr << "\nCould not open or read database file" << std::endl;
+        return;
+    }
+    std::cout << " ... done\n";
+    // TODO(rmaerker): Add sort option, but do it with modified string.
+    // We might want to have a sorted modifid string, with only views to the underlying container?
+    // std::sort(begin(tmp1, Standard()), end(tmp1, Standard()), [](auto const & s1, auto const & s2){ return length(s1) < length(s2); });
+    // std::sort(begin(tmp2, Standard()), end(tmp2, Standard()), [](auto const & s1, auto const & s2){ return length(s1) < length(s2); });
+    //
+    options.stats.seqMinLength = [](auto & set1, auto & set2)
+    {
+        decltype(length(set1)) m{0};
+        for (auto && seq : set1)
+        {
+            m = std::min(length(seq), m);
+        }
 
-    std::cout << "\t done.\n";
+        for (auto && seq : set2)
+        {
+            m = std::min(length(seq), m);
+        }
+        return m;
+    }(seqSet1, seqSet2);
+    options.stats.seqMaxLength = [](auto & set1, auto & set2)
+    {
+        decltype(length(set1)) m{0};
+        for (auto && seq : set1)
+        {
+            m = std::max(length(seq), m);
+        }
+
+        for (auto && seq : set2)
+        {
+            m = std::max(length(seq), m);
+        }
+        return m;
+    }(seqSet1, seqSet2);
+
+    options.stats.numAlignments = length(seqSet1) * length(seqSet2);
+
+    StringSet<String<TAlphabet>, Dependent<Tight>> setH;
+    StringSet<String<TAlphabet>, Dependent<Tight>> setV;
+
+    std::cout << "Calculating total size";
+    for (unsigned i = 0; i < length(seqSet1); ++i)
+    {
+        for (unsigned j = 0; j < length(seqSet2); ++j)
+        {
+            options.stats.totalCells += (1+length(seqSet1[i]))*(1+length(seqSet2[j]));
+            appendValue(setH, seqSet1[i]);
+            appendValue(setV, seqSet2[j]);
+        }
+    }
+
+    std::cout << "\t ...done.\n";
 
     switch(options.simdWidth)
     {
-        case SimdIntegerWidth::BIT_8:
-            std::cerr << "8 bit values not supported. Continue with 16 bit values.\n";
         case SimdIntegerWidth::BIT_16:
             options.stats.scoreValue = "int16_t";
-            configureScore<int16_t>(TAlphabet(), options, seqSet1, seqSet2);
+            // configureScore<int16_t>(TAlphabet(), options, setH, setV);
             break;
         case SimdIntegerWidth::BIT_32:
             options.stats.scoreValue = "int32_t";
-            configureScore<int32_t>(TAlphabet(), options, seqSet1, seqSet2);
+            configureScore<int32_t>(TAlphabet(), options, setH, setV);
             break;
         case SimdIntegerWidth::BIT_64:
             options.stats.scoreValue = "int64_t";
-//            configureScore<int64_t>(TAlphabet(), options, seqSet1, seqSet2);
+            // configureScore<int64_t>(TAlphabet(), options, setH, setV);
             break;
     }
 }
@@ -394,8 +366,8 @@ configure(AlignBenchOptions & options)
     }
     else
     {
-        options.stats.scoreAlpha = "amino acid";
-//        configureAlpha<AminoAcid>(options);
+        options.stats.scoreAlpha = "aa";
+        // configureAlpha<AminoAcid>(options);
     }
 }
 
@@ -405,16 +377,6 @@ int main(int argc, char* argv[])
 
     if (parseCommandLine(options, argc, argv) != ArgumentParser::PARSE_OK)
         return EXIT_FAILURE;
-
-//    seqSet1[0] = "ATGTGTTACTGGGAGTAGGTTCTCCACTCTCTTCCAGTTAGGCTTGTAAGCGCTAATCGTTCTTGGGAAAGCCGGCTAAACCTTTGGACCAGCTGCAGCGGTATGATGTTTCTCAGAATCTATCGGGAAACAAGACACTCGGCATTTTATTGGTACGACCATTAAGGGTGCTTTGGATTTGGTCAGGACGTCAGTGTAACGACGGATCGCCCACAGCGATCTTGTATCTCGGGGACTCGAAACCCAGAACAATTCATCTATTACCGGCAAACGACGAGCGGGCCAAGCTGGCATTAGCCCGATAACAAAGACCTCGATC";
-//    seqSet2[0] = "TAACAGGTATTGTAGCGTTTAAAGGCTCGAGTCACAGACATGATATAAGATTGGTCTGTAACTGGGCATTCTGAAAGCAAAACAATCCAGTATAATGGTGGTAGGGTGTTTGATTGAAGGTAGAGTAGTTACATCCGTCACGCACGCCTACCATTGGACAAAGGGCGCTCGTACCTTCTGTTTGTCGTTATCACGAGATGGGACTCGCAAATCAGACCTTCTCTTAGGGTCTTTACGTCTGTCAGAACAGATCTGTTCCACTTTTGGTCGCATTTGGCAAGCTGGAAGCGAATTGGGGACCATAATAAATGCGATTGGTG";
-//    std::cout << length(seqSet1[0]) << " \t";
-//    std::cout << length(seqSet2[0]);
-//    std::cout << "\t\t\tdone\n" << std::flush;
-
-//    for (auto& str : seqSet)
-//        std::cout << str << "\n";
-//    std::cout << std::flush;
 
 // TODO(rrahn): Make object configurable.
 #ifdef DP_ALIGN_STATS

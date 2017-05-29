@@ -35,101 +35,12 @@
 #ifndef BENCHMARK_EXECUTOR_HPP_
 #define BENCHMARK_EXECUTOR_HPP_
 
+#include "timer.hpp"
+
 #include <seqan/basic.h>
 #include <seqan/align_parallel_2.h>
 
 using namespace seqan;
-
-// ----------------------------------------------------------------------------
-// Class Timer
-// ----------------------------------------------------------------------------
-
-template <typename TValue, typename TSpec = void>
-struct Timer
-{
-    TValue _begin;
-    TValue _end;
-
-    unsigned _rep;
-
-    Timer() :
-    _begin(0),
-    _end(0)
-    {};
-};
-
-// ============================================================================
-// Functions
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-// Function setRep()
-// ----------------------------------------------------------------------------
-
-template <typename TValue, typename TSpec>
-inline void setRep(Timer<TValue, TSpec> & timer, unsigned const rep)
-{
-    timer._rep = rep;
-}
-
-// ----------------------------------------------------------------------------
-// Function start()
-// ----------------------------------------------------------------------------
-
-template <typename TValue, typename TSpec>
-inline void start(Timer<TValue, TSpec> & timer)
-{
-    timer._begin = sysTime();
-}
-
-// ----------------------------------------------------------------------------
-// Function stop()
-// ----------------------------------------------------------------------------
-
-template <typename TValue, typename TSpec>
-inline void stop(Timer<TValue, TSpec> & timer)
-{
-    timer._end = sysTime();
-}
-
-// ----------------------------------------------------------------------------
-// Function getValue()
-// ----------------------------------------------------------------------------
-
-template <typename TValue, typename TSpec>
-inline TValue getValue(Timer<TValue, TSpec> const & timer)
-{
-    return (timer._end - timer._begin) / timer._rep;
-}
-
-template <typename TValue, typename TSpec>
-inline TValue getValue(Timer<TValue, TSpec> & timer)
-{
-    return getValue(static_cast<Timer<TValue, TSpec> const &>(timer));
-}
-
-// ----------------------------------------------------------------------------
-// Function operator<<
-// ----------------------------------------------------------------------------
-
-template <typename TStream, typename TValue, typename TSpec>
-inline TStream & operator<<(TStream & os, Timer<TValue, TSpec> const & timer)
-{
-    os << getValue(timer) << " sec";
-    return os;
-}
-
-// ----------------------------------------------------------------------------
-// Function printRuler()
-// ----------------------------------------------------------------------------
-
-template <typename TStream>
-inline void printRuler(TStream & os)
-{
-    os << std::endl
-    << "================================================================================"
-    << std::endl << std::endl;
-}
 
 // ----------------------------------------------------------------------------
 // Class BenchmarkExecutor
@@ -427,6 +338,10 @@ BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
     options.stats.threads = options.threadCount;
     options.stats.parallelInstances = options.parallelInstances;
     options.stats.blockSize = options.blockSize;
+
+    std::cout << "Num of threads: " << options.threadCount << std::endl;
+    std::cout << "Num of instances: " << options.parallelInstances << std::endl;
+    std::cout << "block size: " << options.blockSize << std::endl;
 
     struct DPConfigTraits : seqan::DPTraits::GlobalAffine
     {

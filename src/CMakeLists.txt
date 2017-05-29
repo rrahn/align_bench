@@ -210,11 +210,20 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SEQAN_CXX_FLAGS}")
 # Update the list of file names below if you add source files to your application.
 add_executable(align_bench align_bench.cpp
                            align_bench_options.hpp
+                           timer.hpp
                            sequence_generator.hpp
                            benchmark_executor.hpp)
 
 # Add dependencies found by find_package (SeqAn).
 target_link_libraries (align_bench ${SEQAN_LIBRARIES})
+
+add_executable(db_search db_search.cpp
+                         align_bench_options.hpp
+                         timer.hpp
+                         benchmark_executor.hpp)
+
+# Add dependencies found by find_package (SeqAn).
+target_link_libraries (db_search ${SEQAN_LIBRARIES})
 
 # ----------------------------------------------------------------------------
 # Installation - requires SeqAn build system.
