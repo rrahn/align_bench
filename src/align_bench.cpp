@@ -203,7 +203,10 @@ inline void configureExec(AlignBenchOptions & options,
         case ParallelMode::PARALLEL:
         {
             options.stats.execPolicy = "parallel";
-            invoke(options, std::forward<TArgs>(args)..., par);
+            options.stats.threads = options.threadCount;
+            seqan::ExecutionPolicy<seqan::Parallel, seqan::Serial> exec;
+            setNumThreads(exec, options.threadCount);
+            invoke(options, std::forward<TArgs>(args)..., exec);
             break;
         }
         case ParallelMode::PARALLEL_VEC:
@@ -211,15 +214,24 @@ inline void configureExec(AlignBenchOptions & options,
             #ifdef SEQAN_SIMD_ENABLED
             options.stats.execPolicy = "parallel_vec";
             options.stats.vectorLength = SEQAN_SIZEOF_MAX_VECTOR / static_cast<unsigned>(options.simdWidth);
-            invoke(options, std::forward<TArgs>(args)..., parVec);
+            options.stats.threads = options.threadCount;
+            seqan::ExecutionPolicy<seqan::Parallel, seqan::Vectorial> exec;
+            setNumThreads(exec, options.threadCount);
+            invoke(options, std::forward<TArgs>(args)..., exec);
             #endif
             break;
         }
         case ParallelMode::WAVEFRONT:
         {
                 options.stats.execPolicy = "wavefront";
-                seqan::ExecutionPolicy<seqan::WavefrontAlignment<>, seqan::Serial> wavePolicy;
-                invoke(options, std::forward<TArgs>(args)..., wavePolicy);
+                seqan::ExecutionPolicy<seqan::WavefrontAlignment<>, seqan::Serial> exec;
+                options.stats.threads = options.threadCount;
+                options.stats.parallelInstances = options.parallelInstances;
+                options.stats.blockSize = options.blockSize;
+                setNumThreads(exec, options.threadCount);
+                setParallelAlignments(exec, options.parallelInstances);
+                setBlockSize(exec, options.blockSize);
+                invoke(options, std::forward<TArgs>(args)..., exec);
             break;
         }
         case ParallelMode::WAVEFRONT_VEC:
@@ -227,12 +239,19 @@ inline void configureExec(AlignBenchOptions & options,
             #ifdef SEQAN_SIMD_ENABLED
             options.stats.execPolicy = "wavefront_vec";
             options.stats.vectorLength = SEQAN_SIZEOF_MAX_VECTOR / static_cast<unsigned>(options.simdWidth);
+            options.stats.threads = options.threadCount;
+            options.stats.parallelInstances = options.parallelInstances;
+            options.stats.blockSize = options.blockSize;
             #if defined(SEQAN_BLOCK_OFFSET_OPTIMIZATION)
-            seqan::ExecutionPolicy<seqan::WavefrontAlignment<BlockOffsetOptimization>, seqan::Vectorial> wavePolicy;
+            seqan::ExecutionPolicy<seqan::WavefrontAlignment<BlockOffsetOptimization>, seqan::Vectorial> exec;
             #else
-            seqan::ExecutionPolicy<seqan::WavefrontAlignment<>, seqan::Vectorial> wavePolicy;
+            seqan::ExecutionPolicy<seqan::WavefrontAlignment<>, seqan::Vectorial> exec;
             #endif // defined(SEQAN_BLOCK_OFFSET_OPTIMIZATION)
-            invoke(options, std::forward<TArgs>(args)..., wavePolicy);
+
+            setNumThreads(exec, options.threadCount);
+            setParallelAlignments(exec, options.parallelInstances);
+            setBlockSize(exec, options.blockSize);
+            invoke(options, std::forward<TArgs>(args)..., exec);
             #endif
             break;
         }
@@ -240,27 +259,9 @@ inline void configureExec(AlignBenchOptions & options,
         {
             SEQAN_ASSERT(options.parMode == ParallelMode::SEQUENTIAL);
             options.stats.execPolicy = "sequential";
+            options.stats.threads = 1;
             invoke(options, std::forward<TArgs>(args)..., seq);
         }
-    }
-}
-
-template <typename... TArgs>
-inline void
-configureMethod(AlignBenchOptions & options,
-                TArgs &&... args)
-{
-    switch (options.method)
-    {
-        case AlignMethod::GLOBAL:
-            configureExec(options, std::forward<TArgs>(args)..., GlobalAlignment_<>());
-            break;
-        case AlignMethod::LOCAL:
-            configureExec(options, std::forward<TArgs>(args)..., LocalAlignment_<>());
-            break;
-        case AlignMethod::SEMIGLOBAL:
-            configureExec(options, std::forward<TArgs>(args)..., GlobalAlignment_<seqan::FreeEndGaps_<True, False, True, False>>());
-            break;
     }
 }
 
@@ -270,7 +271,7 @@ configureScore(Dna const & /*tag*/,
                AlignBenchOptions & options,
                TArgs &&... args)
 {
-    configureMethod(options, std::forward<TArgs>(args)..., Score<TScoreValue>(6, -4, -1 , -11));
+    configureExec(options, std::forward<TArgs>(args)..., Score<TScoreValue>(6, -4, -1 , -11));
 }
 
 template <typename TScoreValue, typename... TArgs>
@@ -279,7 +280,7 @@ configureScore(AminoAcid const & /*tag*/,
                AlignBenchOptions & options,
                TArgs &&... args)
 {
-    configureMethod(options, std::forward<TArgs>(args)..., Score<TScoreValue, ScoreMatrix<AminoAcid, ScoreSpecBlosum62> >(-1 , -11));
+    configureExec(options, std::forward<TArgs>(args)..., Score<TScoreValue, ScoreMatrix<AminoAcid, ScoreSpecBlosum62> >(-1 , -11));
 }
 
 template <typename TAlphabet>
@@ -379,7 +380,7 @@ configureAlpha(AlignBenchOptions & options)
             break;
         case SimdIntegerWidth::BIT_64:
             options.stats.scoreValue = "int64_t";
-//            configureScore<int64_t>(TAlphabet(), options, seqSet1, seqSet2);
+            configureScore<int64_t>(TAlphabet(), options, seqSet1, seqSet2);
             break;
     }
 }
@@ -395,7 +396,7 @@ configure(AlignBenchOptions & options)
     else
     {
         options.stats.scoreAlpha = "amino acid";
-//        configureAlpha<AminoAcid>(options);
+        configureAlpha<AminoAcid>(options);
     }
 }
 
@@ -405,16 +406,6 @@ int main(int argc, char* argv[])
 
     if (parseCommandLine(options, argc, argv) != ArgumentParser::PARSE_OK)
         return EXIT_FAILURE;
-
-//    seqSet1[0] = "ATGTGTTACTGGGAGTAGGTTCTCCACTCTCTTCCAGTTAGGCTTGTAAGCGCTAATCGTTCTTGGGAAAGCCGGCTAAACCTTTGGACCAGCTGCAGCGGTATGATGTTTCTCAGAATCTATCGGGAAACAAGACACTCGGCATTTTATTGGTACGACCATTAAGGGTGCTTTGGATTTGGTCAGGACGTCAGTGTAACGACGGATCGCCCACAGCGATCTTGTATCTCGGGGACTCGAAACCCAGAACAATTCATCTATTACCGGCAAACGACGAGCGGGCCAAGCTGGCATTAGCCCGATAACAAAGACCTCGATC";
-//    seqSet2[0] = "TAACAGGTATTGTAGCGTTTAAAGGCTCGAGTCACAGACATGATATAAGATTGGTCTGTAACTGGGCATTCTGAAAGCAAAACAATCCAGTATAATGGTGGTAGGGTGTTTGATTGAAGGTAGAGTAGTTACATCCGTCACGCACGCCTACCATTGGACAAAGGGCGCTCGTACCTTCTGTTTGTCGTTATCACGAGATGGGACTCGCAAATCAGACCTTCTCTTAGGGTCTTTACGTCTGTCAGAACAGATCTGTTCCACTTTTGGTCGCATTTGGCAAGCTGGAAGCGAATTGGGGACCATAATAAATGCGATTGGTG";
-//    std::cout << length(seqSet1[0]) << " \t";
-//    std::cout << length(seqSet2[0]);
-//    std::cout << "\t\t\tdone\n" << std::flush;
-
-//    for (auto& str : seqSet)
-//        std::cout << str << "\n";
-//    std::cout << std::flush;
 
 // TODO(rrahn): Make object configurable.
 #ifdef DP_ALIGN_STATS
