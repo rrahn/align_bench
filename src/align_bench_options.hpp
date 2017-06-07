@@ -80,6 +80,7 @@ struct AlignBenchStats
     int                     numSequences;
     size_t                  seqMinLength;
     size_t                  seqMaxLength;
+    unsigned                numAlignments;
     double                  totalCells;
     std::string             dist;
     std::string             method;
@@ -101,6 +102,7 @@ struct AlignBenchStats
         stream << "Simulated,";
         stream << "SeqMin,";
         stream << "SeqMax,";
+        stream << "#Alignments,";
         stream << "#GCells,";
         stream << "Dist,";
         stream << "BitsPerScore,";
@@ -121,16 +123,17 @@ struct AlignBenchStats
     void writeStats(TStream & stream)
     {
 
-        stream << execPolicy   << "," <<
-                  state        << "," <<
-                  numSequences << "," <<
-                  seqMinLength << "," <<
-                  seqMaxLength << "," <<
-                  totalCells   << "," <<
-                  dist         << "," <<
-                  scoreValue   << "," <<
-                  scoreAlpha   << "," <<
-                  method       << ",";
+        stream << execPolicy    << "," <<
+                  state         << "," <<
+                  numSequences  << "," <<
+                  seqMinLength  << "," <<
+                  seqMaxLength  << "," <<
+                  numAlignments << "," <<
+                  totalCells    << "," <<
+                  dist          << "," <<
+                  scoreValue    << "," <<
+                  scoreAlpha    << "," <<
+                  method        << ",";
         stream << time << ",";
         stream << (static_cast<double>(totalCells) / time) / 1000000000.0 << ",";
         if (blockSize != 0)
@@ -168,20 +171,20 @@ struct AlignBenchOptions
     std::string queryFile;
     std::string databaseFile;
     std::string alignOut;
-    unsigned rep;
+    unsigned rep{1};
     unsigned threadCount;
     unsigned parallelInstances;
     unsigned blockSize;
-    int      numSequences;
-    unsigned minSize;
-    unsigned maxSize;
+    int      numSequences{0};
+    unsigned minSize{0};
+    unsigned maxSize{0};
     AlignMethod  method;
     ParallelMode parMode = ParallelMode::SEQUENTIAL;
 
     SimdIntegerWidth simdWidth;
     ScoreAlphabet alpha;
 
-    DistributionFunction distFunction;
+    DistributionFunction distFunction{DistributionFunction::UNIFORM_DISTRIBUTION};
 
     AlignBenchStats stats;
 };

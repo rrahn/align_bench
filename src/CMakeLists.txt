@@ -168,15 +168,15 @@ elseif (SEQAN_ARCH_SSE4)
     # Enable correct simd library.
     if (USE_UME_SIMD)
         message (STATUS "UME::simd library is enabled.")
-        set (SEQAN_DEFINITIONS "${SEQAN_DEFINITIONS} -DSEQAN_UMESIMD_ENABLED")
+        set (SEQAN_DEFINITIONS "${SEQAN_DEFINITIONS};-DSEQAN_UMESIMD_ENABLED")
     else ()
         message (STATUS "SeqAn::simd library is enabled")
-        set (SEQAN_DEFINITIONS "${SEQAN_DEFINITIONS} -DSEQAN_SEQANSIMD_ENABLED")
+        set (SEQAN_DEFINITIONS "${SEQAN_DEFINITIONS};-DSEQAN_SEQANSIMD_ENABLED")
     endif ()
 
     if (BLOCK_OFFSET_OPTIMIZATION)
         message (STATUS "BLOCK_OFFSET_OPTIMIZATION is enabled.")
-        set (SEQAN_DEFINITIONS "${SEQAN_DEFINITIONS} -DSEQAN_BLOCK_OFFSET_OPTIMIZATION")
+        set (SEQAN_DEFINITIONS "${SEQAN_DEFINITIONS};-DSEQAN_BLOCK_OFFSET_OPTIMIZATION")
     else ()
         message (STATUS "BLOCK_OFFSET_OPTIMIZATION is disabled.")
     endif ()
@@ -215,11 +215,20 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SEQAN_CXX_FLAGS}")
 # Update the list of file names below if you add source files to your application.
 add_executable(align_bench align_bench.cpp
                            align_bench_options.hpp
+                           timer.hpp
                            sequence_generator.hpp
                            benchmark_executor.hpp)
 
 # Add dependencies found by find_package (SeqAn).
 target_link_libraries (align_bench ${SEQAN_LIBRARIES})
+
+add_executable(db_search db_search.cpp
+                         align_bench_options.hpp
+                         timer.hpp
+                         benchmark_executor.hpp)
+
+# Add dependencies found by find_package (SeqAn).
+target_link_libraries (db_search ${SEQAN_LIBRARIES})
 
 # ----------------------------------------------------------------------------
 # Installation - requires SeqAn build system.
