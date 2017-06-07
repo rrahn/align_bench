@@ -52,7 +52,7 @@ struct Timer
 
     unsigned _rep;
 
-    Timer() : _begin(0), _end(0)
+    Timer() : _begin(0), _end(0), _rep(1)
     {};
 };
 

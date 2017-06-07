@@ -115,7 +115,7 @@ template <typename TStream, typename TResultVec>
 inline void writeScores_(TStream & stream,
                         TResultVec const & vec)
 {
-    std::for_each(std::begin(vec), std::end(vec), [&](auto & sc) { stream << sc << ","; });
+    std::for_each(std::begin(vec), std::end(vec), [&](auto & sc) { stream << sc << ",\n"; });
     stream << "\n";
 }
 

@@ -288,8 +288,11 @@ inline void
 configureAlpha(AlignBenchOptions & options)
 {
     // If option for generating is specified.
-    StringSet<String<TAlphabet>> seqSet1;
-    StringSet<String<TAlphabet>> seqSet2;
+    StringSet<String<TAlphabet>, Dependent<Generous>> seqSet1;
+    StringSet<String<TAlphabet>, Dependent<Generous>> seqSet2;
+
+    StringSet<String<TAlphabet>> tmp1;
+    StringSet<String<TAlphabet>> tmp2;
 
     options.stats.totalCells = 0;
     if (options.numSequences != -1)
@@ -316,18 +319,17 @@ configureAlpha(AlignBenchOptions & options)
         }
     } else
     {
+        std::cout << "Reading sequences ...";
         StringSet<CharString> meta1;
         StringSet<CharString> meta2;
 
-        StringSet<String<TAlphabet>> tmp1;
-        StringSet<String<TAlphabet>> tmp2;
         try {
             SeqFileIn queryFile{options.queryFile.c_str()};
             readRecords(meta1, tmp1, queryFile);
-
-        } catch(...)
+        } catch(seqan::ParseError & e)
         {
             std::cerr << "Could not read query file" << std::endl;
+            std::cerr << e.what() << std::endl;
             return;
         }
 
@@ -345,18 +347,21 @@ configureAlpha(AlignBenchOptions & options)
             return;
         }
 
+        std::cout << "\t done.\nSorting Sequences ...";
+
         std::sort(begin(tmp1, Standard()), end(tmp1, Standard()), [](auto const & s1, auto const & s2){ return length(s1) < length(s2); });
         std::sort(begin(tmp2, Standard()), end(tmp2, Standard()), [](auto const & s1, auto const & s2){ return length(s1) < length(s2); });
 
         options.stats.seqMinLength = length(seqSet1);
         options.stats.seqMaxLength = length(seqSet2);
 
+        std::cout << "\t done.\nGenerating Sequences ..." << std::flush;
         for (unsigned i = 0; i < length(tmp1); ++i)
         {
             for (unsigned j = 0; j < length(tmp2); ++j)
             {
-                appendValue(seqSet1, tmp1[i]);
-                appendValue(seqSet2, tmp2[j]);
+                appendValue(seqSet1, tmp1[i], Generous());
+                appendValue(seqSet2, tmp2[j], Generous());
                 options.stats.totalCells += (1+length(tmp1[i]))*(1+length(tmp2[j]));
             }
         }
