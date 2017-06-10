@@ -28,7 +28,7 @@ message (STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
 find_package (TBB)
 find_package (OpenMP)
-find_package (UMESimd)
+find_package (Umesimd)
 find_package (SeqAn REQUIRED)
 
 # Warn if TBB wasn't find.
