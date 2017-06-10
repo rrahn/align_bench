@@ -16,10 +16,14 @@ project (align_bench CXX)
 #    $ENV{SEQAN_ROOT}/util/cmake)
 
 
+set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/lib/seqan/util/cmake")
 message (STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
-#set (SEQAN_INCLUDE_PATH $ENV{SEQAN_ROOT}/include)
+set (SEQAN_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/lib/seqan/include")
 message (STATUS "SEQAN_INCLUDE_PATH: ${SEQAN_INCLUDE_PATH}")
+
+set (CMAKE_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/lib")
+message (STATUS "CMAKE_INCLUDE_PATH = ${CMAKE_INCLUDE_PATH}")
 
 # ----------------------------------------------------------------------------
 # Prepare global variables

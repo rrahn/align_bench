@@ -1,3 +1,9 @@
 [submodule "software/parasail"]
 	path = software/parasail
 	url = https://github.com/jeffdaily/parasail
+[submodule "lib/umesimd"]
+	path = lib/umesimd
+	url = git@github.com:edanor/umesimd.git
+[submodule "lib/seqan"]
+	path = lib/seqan
+	url = git@github.com:rrahn/seqan.git
