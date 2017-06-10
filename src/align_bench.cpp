@@ -305,17 +305,19 @@ configureAlpha(AlignBenchOptions & options)
         gen.setMaxLength(options.maxSize);
 
 
-        seqSet1 = gen.generate();
-        seqSet2 = gen.generate();
+        tmp1 = gen.generate();
+        tmp2 = gen.generate();
 
         options.stats.numSequences = options.numSequences;
         options.stats.seqMinLength = options.minSize;
         options.stats.seqMaxLength = options.maxSize;
         options.stats.dist         = (options.distFunction == DistributionFunction::NORMAL_DISTRIBUTION) ? "normal" : "uniform";
 
-        for (unsigned i = 0; i < length(seqSet1); ++i)
+        for (unsigned i = 0; i < length(tmp1); ++i)
         {
-            options.stats.totalCells += (1+length(seqSet1[i]))*(1+length(seqSet2[i]));
+            appendValue(seqSet1, tmp1[i]);
+            appendValue(seqSet2, tmp2[i]);
+            options.stats.totalCells += (1+length(tmp1[i]))*(1+length(tmp2[i]));
         }
     } else
     {
