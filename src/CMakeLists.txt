@@ -94,12 +94,12 @@ if (SEQAN_ARCH_AVX2 OR SEQAN_ARCH_AVX512_KNL OR SEQAN_ARCH_AVX512_SKX OR SEQAN_A
     set (SEQAN_ARCH_SSE4 TRUE)
 endif ()
 
-if ((NOT USE_UME_SIMD) AND (SEQAN_ARCH_AVX512_KNL OR SEQAN_ARCH_AVX512_SKX OR SEQAN_ARCH_AVX512_CNL))
-    message (STATUS "Requested target platform requires UMESimd. Fall back to SSE4.")
-    set (SEQAN_ARCH_AVX512_KNL FALSE)
-    set (SEQAN_ARCH_AVX512_SKX FALSE)
-    set (SEQAN_ARCH_AVX512_CNL FALSE)
-endif()
+#if ((NOT USE_UME_SIMD) AND (SEQAN_ARCH_AVX512_KNL OR SEQAN_ARCH_AVX512_SKX OR SEQAN_ARCH_AVX512_CNL))
+#    message (STATUS "Requested target platform requires UMESimd. Fall back to SSE4.")
+#    set (SEQAN_ARCH_AVX512_KNL FALSE)
+#    set (SEQAN_ARCH_AVX512_SKX FALSE)
+#    set (SEQAN_ARCH_AVX512_CNL FALSE)
+#endif()
 
 if (COMPILER_MSVC)
     message (STATUS "Compiler is msvc")
