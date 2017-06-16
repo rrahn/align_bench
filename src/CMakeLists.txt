@@ -18,8 +18,8 @@ message (STATUS "Configuring src/align_bench_app")
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 # Search SeqAn and select dependencies.
-# find_package (ZLIB)
-# find_package (BZip2)
+find_package (ZLIB)
+find_package (BZip2)
 
 message (STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 

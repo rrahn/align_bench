@@ -2,6 +2,7 @@
 //#define SEQAN_ENABLE_TESTING 0
 //#define SEQAN_ENABLE_DEBUG 0
 
+#define DP_PARALLEL_SHOW_PROGRESS
 #define DP_ALIGN_STATS
 
 #include <cxxabi.h>
@@ -15,9 +16,7 @@ std::atomic<uint32_t> serialCounter;
 
 #include <iostream>
 
-
 #include <seqan/basic.h>
-#include <seqan/align.h>
 #include <seqan/align_parallel_2.h>
 
 #include <seqan/arg_parse.h>
