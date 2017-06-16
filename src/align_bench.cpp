@@ -2,8 +2,8 @@
 //#define SEQAN_ENABLE_TESTING 0
 //#define SEQAN_ENABLE_DEBUG 0
 
-#define DP_PARALLEL_SHOW_PROGRESS
-#define DP_ALIGN_STATS
+//#define DP_PARALLEL_SHOW_PROGRESS
+//#define DP_ALIGN_STATS
 
 #include <cxxabi.h>
 #include <array>
