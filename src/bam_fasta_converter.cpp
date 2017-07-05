@@ -107,13 +107,13 @@ int main(int argc, char* argv[])
         readRecords(ref_ids, ref_seqs, ref_file);
         while(!atEnd(bam_file))
         {
-            if (count % 1000 == 0)
+            if (count % 10000 == 0)
                 std::cout << "." << std::flush;
 
             StringSet<BamAlignmentRecord> records;
-            readRecords(records, bam_file, 1000);
+            readRecords(records, bam_file, 10000);
 
-            auto extract_seq = [&](auto && align_row)
+            auto extract_seq = [&](auto & align_row)
             {
                 Dna5String seq;
                 reserve(seq, length(align_row), Exact());
@@ -138,10 +138,10 @@ int main(int argc, char* argv[])
             {
 
                 auto write_pos = old_size + (splitter[job] - begin(records, Standard()));
-                SEQAN_OMP_PRAGMA(critical)
-                {
-                    std::cout << omp_get_thread_num() << ": " << write_pos << std::endl;
-                }
+                // SEQAN_OMP_PRAGMA(critical)
+                // {
+                //     std::cout << omp_get_thread_num() << ": " << write_pos << std::endl;
+                // }
                 for (auto it = splitter[job]; it != splitter[job + 1]; ++it)
                 {
                     Align<Dna5String> align;
