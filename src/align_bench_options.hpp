@@ -73,6 +73,13 @@ enum class ScoreAlphabet : uint8_t
     AMINOACID
 };
 
+enum class AlignmentMode : uint8_t
+{
+    PAIR,
+    SEARCH,
+    OLC
+};
+
 struct AlignBenchStats
 {
     std::string             execPolicy;
@@ -83,9 +90,11 @@ struct AlignBenchStats
     unsigned                numAlignments;
     double                  totalCells;
     std::string             dist;
+    std::string             mode;
     std::string             method;
     std::string             scoreValue;
     std::string             scoreAlpha;
+    std::string             sortSequences;
     std::vector<int32_t>    scores;
     double                  time;
 
@@ -99,14 +108,16 @@ struct AlignBenchStats
     {
         stream << "Policy,";
         stream << "State,";
-        stream << "Simulated,";
-        stream << "SeqMin,";
-        stream << "SeqMax,";
+        stream << "#Sequences,";
+        // stream << "SeqMin,";
+        // stream << "SeqMax,";
         stream << "#Alignments,";
+        stream << "sorted,";
         stream << "#GCells,";
         stream << "Dist,";
         stream << "BitsPerScore,";
         stream << "Alphabet,";
+        stream << "Mode,";
         stream << "Method,";
         stream << "Time,";
         stream << "GCUPS,";
@@ -126,13 +137,15 @@ struct AlignBenchStats
         stream << execPolicy    << "," <<
                   state         << "," <<
                   numSequences  << "," <<
-                  seqMinLength  << "," <<
-                  seqMaxLength  << "," <<
+                //   seqMinLength  << "," <<
+                //   seqMaxLength  << "," <<
                   numAlignments << "," <<
+                  sortSequences << "," <<
                   totalCells    << "," <<
                   dist          << "," <<
                   scoreValue    << "," <<
                   scoreAlpha    << "," <<
+                  mode          << "," <<
                   method        << ",";
         stream << time << ",";
         stream << (static_cast<double>(totalCells) / time) / 1000000000.0 << ",";
@@ -178,6 +191,8 @@ struct AlignBenchOptions
     int      numSequences{0};
     unsigned minSize{0};
     unsigned maxSize{0};
+    bool     sortSequences;
+    AlignmentMode mode;
     AlignMethod  method;
     ParallelMode parMode = ParallelMode::SEQUENTIAL;
 

@@ -107,6 +107,12 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
     setValidValues(parser, "m", "global semi local");
     setDefaultValue(parser, "m", "global");
 
+    addOption(parser, seqan::ArgParseOption("", "alignment-mode", "How the input sequences should be aligned", seqan::ArgParseArgument::STRING, "STRING"));
+    setValidValues(parser, "alignment-mode", "pair search olc");
+    setDefaultValue(parser, "alignment-mode", "pair");
+
+    addOption(parser, seqan::ArgParseOption("", "sort-sequences", "Whether the sequences should be sorted"));
+
     // Parse command line.
     if (parse(parser, argc, argv) != ArgumentParser::PARSE_OK)
         return ArgumentParser::PARSE_ERROR;
@@ -177,6 +183,19 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
 
     // Read block size.
     getOptionValue(options.blockSize, parser, "bs");
+
+    clear(tmp);
+    if (getOptionValue(tmp, parser, "alignment-mode"))
+    {
+        if (tmp == "pair")
+            options.mode = AlignmentMode::PAIR;
+        else if (tmp == "search")
+            options.mode = AlignmentMode::SEARCH;
+        else if (tmp == "olc")
+            options.mode = AlignmentMode::OLC;
+    }
+
+    options.sortSequences = isSet(parser, "sort-sequences");
 
     return ArgumentParser::PARSE_OK;
 }
@@ -348,24 +367,65 @@ configureAlpha(AlignBenchOptions & options)
             return;
         }
 
-        std::cout << "\t done.\nSorting Sequences ...";
+        options.stats.sortSequences = "no";
+        if (options.sortSequences)
+        {
+            options.stats.sortSequences = "yes";
+            std::cout << "\t done.\nSorting Sequences ...";
 
-        std::sort(begin(tmp1, Standard()), end(tmp1, Standard()), [](auto const & s1, auto const & s2){ return length(s1) < length(s2); });
-        std::sort(begin(tmp2, Standard()), end(tmp2, Standard()), [](auto const & s1, auto const & s2){ return length(s1) < length(s2); });
-
-        options.stats.seqMinLength = length(seqSet1);
-        options.stats.seqMaxLength = length(seqSet2);
+            std::sort(begin(tmp1, Standard()), end(tmp1, Standard()), [](auto const & s1, auto const & s2){ return length(s1) < length(s2); });
+            std::sort(begin(tmp2, Standard()), end(tmp2, Standard()), [](auto const & s1, auto const & s2){ return length(s1) < length(s2); });
+        }
 
         std::cout << "\t done.\nGenerating Sequences ..." << std::flush;
-        for (unsigned i = 0; i < length(tmp1); ++i)
+        switch (options.mode)
         {
-            for (unsigned j = 0; j < length(tmp2); ++j)
+            case AlignmentMode::PAIR:
             {
-                appendValue(seqSet1, tmp1[i], Generous());
-                appendValue(seqSet2, tmp2[j], Generous());
-                options.stats.totalCells += (1+length(tmp1[i]))*(1+length(tmp2[j]));
+                options.stats.mode = "pair";
+                SEQAN_ASSERT_EQ(length(tmp1), length(tmp2));
+
+                for (unsigned i = 0; i < _min(length(tmp1), length(tmp2)); ++i)
+                {
+                    appendValue(seqSet1, tmp1[i], Generous());
+                    appendValue(seqSet2, tmp2[i], Generous());
+                    options.stats.totalCells += (1+length(tmp1[i]))*(1+length(tmp2[i]));
+                }
+                break;
             }
+            case AlignmentMode::SEARCH:
+            {
+                options.stats.mode = "search";
+                for (unsigned i = 0; i < length(tmp1); ++i)
+                {
+                    for (unsigned j = 0; j < length(tmp2); ++j)
+                    {
+                        appendValue(seqSet1, tmp1[i], Generous());
+                        appendValue(seqSet2, tmp2[j], Generous());
+                        options.stats.totalCells += (1+length(tmp1[i]))*(1+length(tmp2[j]));
+                    }
+                }
+                break;
+            }
+            case AlignmentMode::OLC:
+            {
+                options.stats.mode = "olc";
+                for (unsigned i = 0; i < length(tmp1); ++i)
+                {
+                    for (unsigned j = i+1; j < length(tmp1); ++j)
+                    {
+                        appendValue(seqSet1, tmp1[i], Generous());
+                        appendValue(seqSet2, tmp1[j], Generous());
+                        options.stats.totalCells += (1+length(tmp1[i]))*(1+length(tmp1[j]));
+                    }
+                }
+                break;
+            }
+            default:
+                return;
         }
+        options.stats.seqMinLength = length(tmp1);
+        options.stats.seqMaxLength = length(tmp2);
         options.stats.numSequences = length(seqSet1);
     }
     options.stats.numAlignments = length(seqSet1);
