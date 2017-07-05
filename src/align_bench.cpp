@@ -283,9 +283,9 @@ inline void configureExec(AlignBenchOptions & options,
     }
 }
 
-template <typename TScoreValue, typename... TArgs>
+template <typename TAlpha, typename TScoreValue, typename... TArgs>
 inline void
-configureScore(Dna const & /*tag*/,
+configureScore(TAlpha const & /*tag*/,
                AlignBenchOptions & options,
                TArgs &&... args)
 {
@@ -306,8 +306,9 @@ inline void
 configureAlpha(AlignBenchOptions & options)
 {
     // If option for generating is specified.
-    StringSet<String<TAlphabet>, Dependent<Generous>> seqSet1;
-    StringSet<String<TAlphabet>, Dependent<Generous>> seqSet2;
+    using TView = typename Infix<String<TAlphabet> const>::Type;
+    StringSet<TView> seqSet1;
+    StringSet<TView> seqSet2;
 
     StringSet<String<TAlphabet>> tmp1;
     StringSet<String<TAlphabet>> tmp2;
@@ -333,8 +334,8 @@ configureAlpha(AlignBenchOptions & options)
 
         for (unsigned i = 0; i < length(tmp1); ++i)
         {
-            appendValue(seqSet1, tmp1[i]);
-            appendValue(seqSet2, tmp2[i]);
+            appendValue(seqSet1, infix(tmp1[i], 0, length(tmp1[i])));
+            appendValue(seqSet2, infix(tmp2[i], 0, length(tmp2[i])));
             options.stats.totalCells += (1+length(tmp1[i]))*(1+length(tmp2[i]));
         }
     } else
@@ -387,8 +388,8 @@ configureAlpha(AlignBenchOptions & options)
 
                 for (unsigned i = 0; i < _min(length(tmp1), length(tmp2)); ++i)
                 {
-                    appendValue(seqSet1, tmp1[i], Generous());
-                    appendValue(seqSet2, tmp2[i], Generous());
+                    appendValue(seqSet1, infix(tmp1[i], 0, length(tmp1[i])), Generous());
+                    appendValue(seqSet2, infix(tmp2[i], 0, length(tmp2[i])), Generous());
                     options.stats.totalCells += (1+length(tmp1[i]))*(1+length(tmp2[i]));
                 }
                 break;
@@ -400,8 +401,8 @@ configureAlpha(AlignBenchOptions & options)
                 {
                     for (unsigned j = 0; j < length(tmp2); ++j)
                     {
-                        appendValue(seqSet1, tmp1[i], Generous());
-                        appendValue(seqSet2, tmp2[j], Generous());
+                        appendValue(seqSet1, infix(tmp1[i], 0, length(tmp1[i])), Generous());
+                        appendValue(seqSet2, infix(tmp2[j], 0, length(tmp2[j])), Generous());
                         options.stats.totalCells += (1+length(tmp1[i]))*(1+length(tmp2[j]));
                     }
                 }
@@ -414,8 +415,8 @@ configureAlpha(AlignBenchOptions & options)
                 {
                     for (unsigned j = i+1; j < length(tmp1); ++j)
                     {
-                        appendValue(seqSet1, tmp1[i], Generous());
-                        appendValue(seqSet2, tmp1[j], Generous());
+                        appendValue(seqSet1, infix(tmp1[i], 0, length(tmp1[i])), Generous());
+                        appendValue(seqSet2, infix(tmp1[j], 0, length(tmp2[j])), Generous());
                         options.stats.totalCells += (1+length(tmp1[i]))*(1+length(tmp1[j]));
                     }
                 }
@@ -457,7 +458,7 @@ configure(AlignBenchOptions & options)
     if (options.alpha == ScoreAlphabet::DNA)
     {
         options.stats.scoreAlpha = "dna";
-        configureAlpha<Dna>(options);
+        configureAlpha<Dna5>(options);
     }
     else
     {
