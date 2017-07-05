@@ -230,48 +230,7 @@ add_executable(db_search db_search.cpp
 # Add dependencies found by find_package (SeqAn).
 target_link_libraries (db_search ${SEQAN_LIBRARIES})
 
-# ----------------------------------------------------------------------------
-# Installation - requires SeqAn build system.
-# ----------------------------------------------------------------------------
+add_executable(bam2fa bam_fasta_converter.cpp)
 
-# Set variables for installing, depending on the selected build type.
-# if (NOT SEQAN_PREFIX_SHARE_DOC)
-#   seqan_setup_install_vars (align_bench)
-# endif (NOT SEQAN_PREFIX_SHARE_DOC)
-
-# # Install yara in ${PREFIX}/bin directory
-# install (TARGETS align_bench
-#          DESTINATION bin)
-
-# # Install non-binary files for the package to "." for app builds and
-# # ${PREFIX}/share/doc/yara for SeqAn release builds.
-# install (FILES LICENSE README.rst
-#          DESTINATION ${SEQAN_PREFIX_SHARE_DOC})
-
-# ----------------------------------------------------------------------------
-# App Test
-# ----------------------------------------------------------------------------
-
-#seqan_add_app_test (yara)
-
-# ----------------------------------------------------------------------------
-# Setup Common Tool Description for Generic Workflow Nodes
-# ----------------------------------------------------------------------------
-
-# Include executable yara_mapper in CTD structure.
-# set (SEQAN_CTD_EXECUTABLES ${SEQAN_CTD_EXECUTABLES}
-#                           align_bench CACHE INTERNAL "")
-
-# ----------------------------------------------------------------------------
-# CPack Install
-# ----------------------------------------------------------------------------
-
-# if (SEQAN_BUILD_SYSTEM STREQUAL "APP:align_bench")
-#   set (CPACK_PACKAGE_NAME "align_bench")
-#   set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "Align_Bench - Benchmark tool for alignments.")
-#   set (CPACK_DEBIAN_PACKAGE_MAINTAINER "René Rahn <rene.rahn@fu-berlin.de>")
-#   set (CPACK_PACKAGE_VENDOR "SeqAn Team, FU Berlin")
-#   set (CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.rst")
-
-#   seqan_configure_cpack_app (align_bench "align_bench")
-# endif (SEQAN_BUILD_SYSTEM STREQUAL "APP:align_bench")
+# Add dependencies found by find_package (SeqAn).
+target_link_libraries (bam2fa ${SEQAN_LIBRARIES})
