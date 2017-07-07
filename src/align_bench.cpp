@@ -283,9 +283,9 @@ inline void configureExec(AlignBenchOptions & options,
     }
 }
 
-template <typename TAlpha, typename TScoreValue, typename... TArgs>
+template <typename TScoreValue, typename... TArgs>
 inline void
-configureScore(TAlpha const & /*tag*/,
+configureScore(Dna5 const & /*tag*/,
                AlignBenchOptions & options,
                TArgs &&... args)
 {
@@ -447,7 +447,7 @@ configureAlpha(AlignBenchOptions & options)
             break;
         case SimdIntegerWidth::BIT_64:
             options.stats.scoreValue = "int64_t";
-            configureScore<int64_t>(TAlphabet(), options, seqSet1, seqSet2);
+            //configureScore<int64_t>(TAlphabet(), options, seqSet1, seqSet2);
             break;
     }
 }

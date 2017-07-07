@@ -7,3 +7,9 @@
 [submodule "lib/seqan"]
 	path = lib/seqan
 	url = https://github.com/rrahn/seqan.git
+[submodule "software/ssw"]
+	path = software/ssw
+	url = https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library.git
+[submodule "software/swipe"]
+	path = software/swipe
+	url = https://github.com/torognes/swipe.git
