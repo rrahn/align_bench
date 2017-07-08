@@ -278,7 +278,8 @@ inline void configureExec(AlignBenchOptions & options,
             SEQAN_ASSERT(options.parMode == ParallelMode::SEQUENTIAL);
             options.stats.execPolicy = "sequential";
             options.stats.threads = 1;
-            invoke(options, std::forward<TArgs>(args)..., seq);
+            seqan::ExecutionPolicy<seqan::Serial, seqan::Serial> exec;
+            invoke(options, std::forward<TArgs>(args)..., exec);
         }
     }
 }
