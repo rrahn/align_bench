@@ -13,3 +13,12 @@
 [submodule "software/swipe"]
 	path = software/swipe
 	url = https://github.com/torognes/swipe.git
+[submodule "software/libssa"]
+	path = software/libssa
+	url = https://github.com/RonnySoak/libssa.git
+[submodule "software/opal"]
+	path = software/opal
+	url = https://github.com/Martinsos/opal.git
+[submodule "software/libsdb"]
+	path = software/libsdb
+	url = https://github.com/RonnySoak/libsdb.git
