@@ -95,6 +95,7 @@ struct AlignBenchStats
     std::string             scoreValue;
     std::string             scoreAlpha;
     std::string             sortSequences;
+    std::string             isBanded;
     std::vector<int32_t>    scores;
     double                  time;
 
@@ -113,6 +114,7 @@ struct AlignBenchStats
         // stream << "SeqMax,";
         stream << "#Alignments,";
         stream << "sorted,";
+        stream << "banded";
         stream << "#GCells,";
         stream << "Dist,";
         stream << "BitsPerScore,";
@@ -141,6 +143,7 @@ struct AlignBenchStats
                 //   seqMaxLength  << "," <<
                   numAlignments << "," <<
                   sortSequences << "," <<
+                  isBanded      << "," <<
                   totalCells    << "," <<
                   dist          << "," <<
                   scoreValue    << "," <<
@@ -189,11 +192,14 @@ struct AlignBenchOptions
     unsigned parallelInstances;
     unsigned blockSize;
     int      numSequences{0};
+    int      lower;
+    int      upper;
     unsigned minSize{0};
     unsigned maxSize{0};
     bool     sortSequences{false};
     bool     simd{false};
     bool     blockOptimization{false};
+    bool     isBanded{false};
     AlignmentMode mode;
     AlignMethod  method;
     ParallelMode parMode = ParallelMode::SEQUENTIAL;

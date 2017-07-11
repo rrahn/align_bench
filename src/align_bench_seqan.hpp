@@ -101,13 +101,20 @@ BenchmarkExecutor::runAlignment(AlignBenchOptions & options,
                                 TSet2 const & set2,
                                 TScore const & scoreMat)
 {
+    decltype(globalAlignmentScore(execPolicy, set1, set2, scoreMat)) res;
     switch (options.method)
     {
         case AlignMethod::GLOBAL:
         {
             resize(options.stats.scores, length(set1), Exact());
             start(mTimer);
-            auto && res = globalAlignmentScore(execPolicy, set1, set2, scoreMat);
+#if defined(ALIGN_BENCH_BANDED)
+            options.stats.isBanded = (options.isBanded) ? "yes" : "no";
+            if (options.isBanded)
+                res = globalAlignmentScore(execPolicy, set1, set2, scoreMat, options.lower, options.upper);
+            else
+#endif // ALIGN_BENCH_BANDED
+                res = globalAlignmentScore(execPolicy, set1, set2, scoreMat);
             stop(mTimer);
             seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
             break;
@@ -116,7 +123,7 @@ BenchmarkExecutor::runAlignment(AlignBenchOptions & options,
         {
             resize(options.stats.scores, length(set1), Exact());
             start(mTimer);
-            auto && res = localAlignmentScore(execPolicy, set1, set2, scoreMat);
+            res = localAlignmentScore(execPolicy, set1, set2, scoreMat);
             stop(mTimer);
             seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
             break;
