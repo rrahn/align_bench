@@ -26,20 +26,20 @@ message (STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 #set (TBB_INCLUDE_DIR "/opt/local/include/tbb/")
 #set (TBB_LIBRARY "/opt/local/lib/")
 
-find_package (TBB)
+#find_package (TBB)
 find_package (OpenMP)
 find_package (Umesimd)
 find_package (SeqAn REQUIRED)
 
 # Warn if TBB wasn't find.
-if (NOT TBB_FOUND)
-    message (STATUS "   TBB not found")
-else(NOT TBB_FOUND)
-    message (STATUS "   Using TBB Version ${TBB_VERSION}")
-    list (APPEND SEQAN_DEFINITIONS "${TBB_DEFINITIONS};-DSEQAN_TBB")
-    list (APPEND SEQAN_LIBRARIES "${TBB_LIBRARIES}")
-    list (APPEND SEQAN_INCLUDE_DIRS "${TBB_INCLUDE_DIRS}")
-endif (NOT TBB_FOUND)
+#if (NOT TBB_FOUND)
+#    message (STATUS "   TBB not found")
+#else(NOT TBB_FOUND)
+#    message (STATUS "   Using TBB Version ${TBB_VERSION}")
+#    list (APPEND SEQAN_DEFINITIONS "${TBB_DEFINITIONS};-DSEQAN_TBB")
+#    list (APPEND SEQAN_LIBRARIES "${TBB_LIBRARIES}")
+#    list (APPEND SEQAN_INCLUDE_DIRS "${TBB_INCLUDE_DIRS}")
+#endif (NOT TBB_FOUND)
 
 if (NOT UMESIMD_FOUND)
     message (STATUS "   UMESimd not found")
@@ -69,11 +69,6 @@ endif (NOT OPENMP_FOUND)
 # ----------------------------------------------------------------------------
 
 set (SEQAN_APP_VERSION "0.0.1")
-
-# option (YARA_LARGE_CONTIGS "Set to OFF to disable support for more than 32k contigs or contigs longer than 4Gbp." ON)
-# if (YARA_LARGE_CONTIGS AND NOT SEQAN_TRAVIS_BUILD)
-#   add_definitions (-DYARA_LARGE_CONTIGS=1)
-# endif (YARA_LARGE_CONTIGS AND NOT SEQAN_TRAVIS_BUILD)
 
 # ----------------------------------------------------------------------------
 # machine specific optimizations
@@ -150,19 +145,24 @@ elseif (SEQAN_ARCH_SSE4)
     if (SEQAN_ARCH_AVX512_CNL)
         message (STATUS "Building optimized binaries up to AVX512 CNL and POPCNT.")
         set (SEQAN_CXX_FLAGS "${SEQAN_CXX_FLAGS} ${SEQAN_SIMD_AVX512_CNL_OPTIONS}")
+        set (SEQAN_DEFINITIONS "${SEQAN_DEFINITIONS};-DALIGN_BENCH_SIMD_AVX512_CNL")
     elseif (SEQAN_ARCH_AVX512_SKX)
         message (STATUS "Building optimized binaries up to AVX512 SKX and POPCNT.")
         set (SEQAN_CXX_FLAGS "${SEQAN_CXX_FLAGS} ${SEQAN_SIMD_AVX512_SKX_OPTIONS}")
+        set (SEQAN_DEFINITIONS "${SEQAN_DEFINITIONS};-DALIGN_BENCH_SIMD_AVX512_SKX")
     elseif (SEQAN_ARCH_AVX512_KNL)
         message (STATUS "Building optimized binaries up to AVX512 KNL and POPCNT.")
         set (SEQAN_CXX_FLAGS "${SEQAN_CXX_FLAGS} ${SEQAN_SIMD_AVX512_KNL_OPTIONS}")
         set (BLOCK_OFFSET_OPTIMIZATION OFF CACHE INTERNAL "Select block offset optimization." FORCE)
+        set (SEQAN_DEFINITIONS "${SEQAN_DEFINITIONS};-DALIGN_BENCH_SIMD_AVX512_KNL")
     elseif (SEQAN_ARCH_AVX2)
         message (STATUS "Building optimized binaries up to AVX2 and POPCNT.")
         set (SEQAN_CXX_FLAGS "${SEQAN_CXX_FLAGS} ${SEQAN_SIMD_AVX2_OPTIONS}")
+        set (SEQAN_DEFINITIONS "${SEQAN_DEFINITIONS};-DALIGN_BENCH_SIMD_AVX2")
     else ()
         message (STATUS "Building optimized binaries up to SSE4 and POPCNT.")
         set (SEQAN_CXX_FLAGS "${SEQAN_CXX_FLAGS} ${SEQAN_SIMD_SSE4_OPTIONS}")
+        set (SEQAN_DEFINITIONS "${SEQAN_DEFINITIONS};-DALIGN_BENCH_SIMD_SSE41")
     endif ()
 
     # Enable correct simd library.
@@ -172,13 +172,6 @@ elseif (SEQAN_ARCH_SSE4)
     else ()
         message (STATUS "SeqAn::simd library is enabled")
         set (SEQAN_DEFINITIONS "${SEQAN_DEFINITIONS};-DSEQAN_SEQANSIMD_ENABLED")
-    endif ()
-
-    if (BLOCK_OFFSET_OPTIMIZATION)
-        message (STATUS "BLOCK_OFFSET_OPTIMIZATION is enabled.")
-        set (SEQAN_DEFINITIONS "${SEQAN_DEFINITIONS};-DSEQAN_BLOCK_OFFSET_OPTIMIZATION")
-    else ()
-        message (STATUS "BLOCK_OFFSET_OPTIMIZATION is disabled.")
     endif ()
 endif ()
 
@@ -211,24 +204,41 @@ add_definitions (-DSEQAN_APP_VERSION="${SEQAN_APP_VERSION}")
 
 # Add CXX flags found by find_package (SeqAn).
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SEQAN_CXX_FLAGS}")
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SEQAN_CXX_FLAGS}")
 
 # Update the list of file names below if you add source files to your application.
-add_executable(align_bench align_bench.cpp
+add_executable(align_bench_seq align_bench_seq.cpp
                            align_bench_options.hpp
+                           align_bench_parser.hpp
+                           align_bench_configure.hpp
                            timer.hpp
                            sequence_generator.hpp
                            benchmark_executor.hpp)
 
 # Add dependencies found by find_package (SeqAn).
-target_link_libraries (align_bench ${SEQAN_LIBRARIES})
+target_link_libraries (align_bench_seq ${SEQAN_LIBRARIES})
 
-add_executable(db_search db_search.cpp
-                         align_bench_options.hpp
-                         timer.hpp
-                         benchmark_executor.hpp)
+add_executable(align_bench_par align_bench_par.cpp
+                           align_bench_options.hpp
+                           align_bench_parser.hpp
+                           align_bench_configure.hpp
+                           timer.hpp
+                           sequence_generator.hpp
+                           benchmark_executor.hpp)
 
 # Add dependencies found by find_package (SeqAn).
-target_link_libraries (db_search ${SEQAN_LIBRARIES})
+target_link_libraries (align_bench_par ${SEQAN_LIBRARIES})
+
+add_executable(align_bench_wave align_bench_wave.cpp
+                           align_bench_options.hpp
+                           align_bench_parser.hpp
+                           align_bench_configure.hpp
+                           timer.hpp
+                           sequence_generator.hpp
+                           benchmark_executor.hpp)
+
+# Add dependencies found by find_package (SeqAn).
+target_link_libraries (align_bench_wave ${SEQAN_LIBRARIES})
 
 add_executable(bam2fa bam_fasta_converter.cpp)
 

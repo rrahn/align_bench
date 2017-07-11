@@ -37,11 +37,6 @@
 
 #include "timer.hpp"
 
-#include <seqan/basic.h>
-#include <seqan/align_parallel_2.h>
-
-using namespace seqan;
-
 // ----------------------------------------------------------------------------
 // Class BenchmarkExecutor
 // ----------------------------------------------------------------------------
@@ -59,15 +54,15 @@ class BenchmarkExecutor
 {
 public:
 
-    template <typename TSet1,
+    template <typename TExecPolicy,
+              typename TSet1,
               typename TSet2,
-              typename TScore,
-              typename TExecPolicy>
-    inline void runGlobalAlignment(AlignBenchOptions &,
-                                   TSet1 const &,
-                                   TSet2 const &,
-                                   TScore const &,
-                                   TExecPolicy const &);
+              typename TScore>
+    inline void runAlignment(AlignBenchOptions &,
+                             TExecPolicy const &,
+                             TSet1 const &,
+                             TSet2 const &,
+                             TScore const &);
 
     template <typename TStream>
     inline void
@@ -88,92 +83,5 @@ private:
 
     Timer<double>   mTimer;
 };
-
-
-template <typename TAlignObject>
-inline void writeAlignment(AlignBenchOptions const & options,
-                           TAlignObject const & align)
-{
-    if (options.alignOut == "stdout")
-    {
-        std::cout << align << std::endl;
-        return;
-    }
-
-    std::ofstream alignOut;
-    alignOut.open(options.alignOut.c_str());
-    if (!alignOut.good())
-    {
-        std::cerr << "Could not open file << " << options.alignOut.c_str() << ">>!" << std::endl;
-        return;
-    }
-    alignOut << align;
-    alignOut.close();
-}
-
-template <typename TStream, typename TResultVec>
-inline void writeScores_(TStream & stream,
-                        TResultVec const & vec)
-{
-    std::for_each(std::begin(vec), std::end(vec), [&](auto & sc) { stream << sc << ",\n"; });
-    stream << "\n";
-}
-
-inline void writeScores(AlignBenchOptions const & options)
-{
-    if (options.alignOut == "stdout")
-    {
-        writeScores_(std::cout, options.stats.scores);
-    } else
-    {
-        std::ofstream alignOut;
-        alignOut.open(options.alignOut.c_str());
-        if (!alignOut.good())
-        {
-            std::cerr << "Could not open file << " << options.alignOut.c_str() << ">>!" << std::endl;
-            return;
-        }
-        writeScores_(alignOut, options.stats.scores);
-    }
-}
-
-template <typename TSet1,
-          typename TSet2,
-          typename TScore,
-          typename TExecPolicy>
-inline void
-BenchmarkExecutor::runGlobalAlignment(AlignBenchOptions & options,
-                                      TSet1 const & set1,
-                                      TSet2 const & set2,
-                                      TScore const & scoreMat,
-                                      TExecPolicy const & execPolicy)
-{
-
-    switch (options.method)
-    {
-        case AlignMethod::GLOBAL:
-        {
-            resize(options.stats.scores, length(set1), Exact());
-            start(mTimer);
-            auto && res = globalAlignmentScore(execPolicy, set1, set2, scoreMat);
-            stop(mTimer);
-            seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
-            break;
-        }
-        case AlignMethod::LOCAL:
-        {
-            resize(options.stats.scores, length(set1), Exact());
-            start(mTimer);
-            auto && res = localAlignmentScore(execPolicy, set1, set2, scoreMat);
-            stop(mTimer);
-            seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
-            break;
-        }
-        case AlignMethod::SEMIGLOBAL:
-            // configureExec(options, std::forward<TArgs>(args)..., GlobalAlignment_<seqan::FreeEndGaps_<True, False, True, False>>());
-            break;
-    }
-    writeScores(options);
-}
 
 #endif  // #ifndef BENCHMARK_EXECUTOR_HPP_

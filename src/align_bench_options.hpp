@@ -191,7 +191,9 @@ struct AlignBenchOptions
     int      numSequences{0};
     unsigned minSize{0};
     unsigned maxSize{0};
-    bool     sortSequences;
+    bool     sortSequences{false};
+    bool     simd{false};
+    bool     blockOptimization{false};
     AlignmentMode mode;
     AlignMethod  method;
     ParallelMode parMode = ParallelMode::SEQUENTIAL;
