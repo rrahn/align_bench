@@ -129,7 +129,11 @@ BenchmarkExecutor::runAlignment(AlignBenchOptions & options,
             break;
         }
         case AlignMethod::SEMIGLOBAL:
-            // configureExec(options, std::forward<TArgs>(args)..., GlobalAlignment_<seqan::FreeEndGaps_<True, False, True, False>>());
+            resize(options.stats.scores, length(set1), Exact());
+            start(mTimer);
+            res = globalAlignmentScore(execPolicy, set1, set2, scoreMat, AlignConfig<true, false, false, true>{});
+            stop(mTimer);
+            seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
             break;
     }
     writeScores(options);
