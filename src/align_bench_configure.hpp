@@ -60,78 +60,6 @@ inline void invoke(AlignBenchOptions & options,
     options.stats.time = device.getTime();
 }
 
-// template <typename... TArgs>
-// inline void configureExec(AlignBenchOptions & options,
-//                           TArgs &&... args)
-// {
-//     switch (options.parMode)
-//     {
-//         case ParallelMode::PARALLEL:
-//         {
-//             options.stats.execPolicy = "parallel";
-//             options.stats.threads = options.threadCount;
-//             seqan::ExecutionPolicy<seqan::Parallel, seqan::Serial> exec;
-//             setNumThreads(exec, options.threadCount);
-//             invoke(options, std::forward<TArgs>(args)..., exec);
-//             break;
-//         }
-//         case ParallelMode::PARALLEL_VEC:
-//         {
-//             #ifdef SEQAN_SIMD_ENABLED
-//             options.stats.execPolicy = "parallel_vec";
-//             options.stats.vectorLength = SEQAN_SIZEOF_MAX_VECTOR / static_cast<unsigned>(options.simdWidth);
-//             options.stats.threads = options.threadCount;
-//             seqan::ExecutionPolicy<seqan::Parallel, seqan::Vectorial> exec;
-//             setNumThreads(exec, options.threadCount);
-//             invoke(options, std::forward<TArgs>(args)..., exec);
-//             #endif
-//             break;
-//         }
-//         case ParallelMode::WAVEFRONT:
-//         {
-//                 options.stats.execPolicy = "wavefront";
-//                 seqan::ExecutionPolicy<seqan::WavefrontAlignment<>, seqan::Serial> exec;
-//                 options.stats.threads = options.threadCount;
-//                 options.stats.parallelInstances = options.parallelInstances;
-//                 options.stats.blockSize = options.blockSize;
-//                 setNumThreads(exec, options.threadCount);
-//                 setParallelAlignments(exec, options.parallelInstances);
-//                 setBlockSize(exec, options.blockSize);
-//                 invoke(options, std::forward<TArgs>(args)..., exec);
-//             break;
-//         }
-//         case ParallelMode::WAVEFRONT_VEC:
-//         {
-//             #ifdef SEQAN_SIMD_ENABLED
-//             options.stats.execPolicy = "wavefront_vec";
-//             options.stats.vectorLength = SEQAN_SIZEOF_MAX_VECTOR / static_cast<unsigned>(options.simdWidth);
-//             options.stats.threads = options.threadCount;
-//             options.stats.parallelInstances = options.parallelInstances;
-//             options.stats.blockSize = options.blockSize;
-//             #if defined(SEQAN_BLOCK_OFFSET_OPTIMIZATION)
-//             seqan::ExecutionPolicy<seqan::WavefrontAlignment<BlockOffsetOptimization>, seqan::Vectorial> exec;
-//             #else
-//             seqan::ExecutionPolicy<seqan::WavefrontAlignment<>, seqan::Vectorial> exec;
-//             #endif // defined(SEQAN_BLOCK_OFFSET_OPTIMIZATION)
-//
-//             setNumThreads(exec, options.threadCount);
-//             setParallelAlignments(exec, options.parallelInstances);
-//             setBlockSize(exec, options.blockSize);
-//             invoke(options, std::forward<TArgs>(args)..., exec);
-//             #endif
-//             break;
-//         }
-//         default:
-//         {
-//             SEQAN_ASSERT(options.parMode == ParallelMode::SEQUENTIAL);
-//             options.stats.execPolicy = "sequential";
-//             options.stats.threads = 1;
-//             seqan::ExecutionPolicy<seqan::Serial, seqan::Serial> exec;
-//             invoke(options, std::forward<TArgs>(args)..., exec);
-//         }
-//     }
-// }
-
 template <typename TScoreValue, typename... TArgs>
 inline void
 configureScore(Dna5 const & /*tag*/,
@@ -190,7 +118,7 @@ configureSequences(AlignBenchOptions & options,
         }
     } else
     {
-        std::cout << "Reading sequences ...";
+        std::cout << "Reading sequences ..." << std::flush;
         StringSet<CharString> meta1;
         StringSet<CharString> meta2;
 
@@ -203,6 +131,10 @@ configureSequences(AlignBenchOptions & options,
             std::cerr << e.what() << std::endl;
             return;
         }
+
+//        SeqFileOut fa_out("sd_0001.fa");
+//        for (unsigned i = 0; i < 1000; ++i)
+//            writeRecord(fa_out, meta1[i], tmp1[i]);
 
         try {
             SeqFileIn dbFile{options.databaseFile.c_str()};
@@ -287,7 +219,7 @@ configureSequences(AlignBenchOptions & options,
     {
         case SimdIntegerWidth::BIT_8:
             options.stats.scoreValue = "int8_t";
-            configureScore<int8_t>(TAlphabet(), options, std::forward<TArgs>(args)..., seqSet1, seqSet2);
+            // configureScore<int8_t>(TAlphabet(), options, std::forward<TArgs>(args)..., seqSet1, seqSet2);
         case SimdIntegerWidth::BIT_16:
             options.stats.scoreValue = "int16_t";
             configureScore<int16_t>(TAlphabet(), options, std::forward<TArgs>(args)..., seqSet1, seqSet2);
