@@ -36,7 +36,7 @@
 #define ALIGN_BENCH_SEQAN_HPP
 
 #include <seqan/basic.h>
-#include <seqan/align_parallel_2.h>
+#include <seqan/align_parallel.h>
 
 #include "benchmark_executor.hpp"
 
