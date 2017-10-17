@@ -244,3 +244,10 @@ add_executable(bam2fa bam_fasta_converter.cpp)
 
 # Add dependencies found by find_package (SeqAn).
 target_link_libraries (bam2fa ${SEQAN_LIBRARIES})
+
+add_executable(simd_test simd_test.cpp
+                         align_bench_options.hpp
+                         align_bench_parser.hpp)
+
+# Add dependencies found by find_package (SeqAn).
+target_link_libraries (simd_test ${SEQAN_LIBRARIES})
