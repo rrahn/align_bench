@@ -5,6 +5,8 @@
 //#define DP_PARALLEL_SHOW_PROGRESS
 //#define DP_ALIGN_STATS
 
+#define ALIGN_BENCH_BANDED
+
 #ifdef DP_ALIGN_STATS
 std::atomic<uint32_t> simdCounter;
 std::atomic<uint32_t> serialCounter;

@@ -47,6 +47,7 @@ enum class AlignMethod : uint8_t
 {
     GLOBAL,
     SEMIGLOBAL,
+    OVERLAP,
     LOCAL
 };
 

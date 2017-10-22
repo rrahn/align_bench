@@ -54,7 +54,12 @@ inline void invoke(AlignBenchOptions & options,
 {
     std::cout << "Invoke Alignment...\t" << std::flush;
     BenchmarkExecutor device;
-    device.runAlignment(options, std::forward<TArgs>(args)...);
+#if defined(ALIGN_BENCH_BANDED)
+    if (options.isBanded)
+        device.runAlignmentBanded(options, std::forward<TArgs>(args)...);
+    else
+#endif // ALIGN_BENCH_BANDED
+        device.runAlignment(options, std::forward<TArgs>(args)...);
     std::cout << "\t\t\tdone." << std::endl;
     device.printProfile(std::cout);
     options.stats.time = device.getTime();
@@ -95,7 +100,7 @@ configureSequences(AlignBenchOptions & options,
     if (options.numSequences != -1)
     {
         std::cout << "Generate sequences ...";
-        SequenceGenerator<TAlphabet> gen;
+        SequenceGenerator<Dna> gen;
         gen.setNumber(options.numSequences);
         gen.setDistribution(options.distFunction);
         gen.setMinLength(options.minSize);
@@ -116,6 +121,14 @@ configureSequences(AlignBenchOptions & options,
             appendValue(seqSet2, infix(tmp2[i], 0, length(tmp2[i])));
             options.stats.totalCells += (1+length(tmp1[i]))*(1+length(tmp2[i]));
         }
+
+       SeqFileOut ref_out("ref_seq.fa");
+       for (unsigned i = 0; i < length(tmp1); ++i)
+           writeRecord(ref_out, "seq1", tmp1[i]);
+
+           SeqFileOut qry_out("qry_seq.fa");
+           for (unsigned i = 0; i < length(tmp2); ++i)
+               writeRecord(qry_out, "seq2", tmp2[i]);
     } else
     {
         std::cout << "Reading sequences ..." << std::flush;

@@ -86,8 +86,13 @@ void setup_parser(TParser & parser)
     setDefaultValue(parser, "a", "dna");
 
     addOption(parser, seqan::ArgParseOption("d", "dp-algorithm", "Alignment method", seqan::ArgParseArgument::STRING, "STRING"));
-    setValidValues(parser, "d", "global semi local");
+    setValidValues(parser, "d", "global semi overlap local");
     setDefaultValue(parser, "d", "global");
+
+#if defined(ALIGN_BENCH_BANDED)
+    addOption(parser, seqan::ArgParseOption("", "lower-diagonal", "Lower diagonal of band.", seqan::ArgParseArgument::INTEGER, "INT"));
+    addOption(parser, seqan::ArgParseOption("", "upper-diagonal", "Upper diagonal of band.", seqan::ArgParseArgument::INTEGER, "INT"));
+#endif // ALIGN_BENCH_BANDED
 
     addOption(parser, seqan::ArgParseOption("", "alignment-mode", "How the input sequences should be aligned", seqan::ArgParseArgument::STRING, "STRING"));
     setValidValues(parser, "alignment-mode", "pair search olc");
@@ -145,6 +150,8 @@ inline void get_arguments(TOptions & options, TParser & parser)
             options.method = AlignMethod::GLOBAL;
         else if (options.stats.method == "semiglobal")
             options.method = AlignMethod::SEMIGLOBAL;
+        else if (options.stats.method == "overlap")
+            options.method = AlignMethod::OVERLAP;
         else if (options.stats.method == "local")
             options.method = AlignMethod::LOCAL;
         }
@@ -162,6 +169,15 @@ inline void get_arguments(TOptions & options, TParser & parser)
 
     options.sortSequences = isSet(parser, "sort-sequences");
     options.simd = isSet(parser, "v");
+
+#if defined(ALIGN_BENCH_BANDED)
+    if (isSet(parser, "lower-diagonal") && isSet(parser, "upper-diagonal"))
+    {
+        options.isBanded = true;
+        getOptionValue(options.lower, parser, "lower-diagonal");
+        getOptionValue(options.upper, parser, "upper-diagonal");
+    }
+#endif // ALIGN_BENCH_BANDED
 }
 
 #endif // ALIGN_BENCH_PARSER_HPP_

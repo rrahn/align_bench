@@ -101,20 +101,14 @@ BenchmarkExecutor::runAlignment(AlignBenchOptions & options,
                                 TSet2 const & set2,
                                 TScore const & scoreMat)
 {
-    decltype(globalAlignmentScore(execPolicy, set1, set2, scoreMat)) res;
+    options.stats.isBanded = "no";
     switch (options.method)
     {
         case AlignMethod::GLOBAL:
         {
             resize(options.stats.scores, length(set1), Exact());
             start(mTimer);
-#if defined(ALIGN_BENCH_BANDED)
-            options.stats.isBanded = (options.isBanded) ? "yes" : "no";
-            if (options.isBanded)
-                res = globalAlignmentScore(execPolicy, set1, set2, scoreMat, options.lower, options.upper);
-            else
-#endif // ALIGN_BENCH_BANDED
-                res = globalAlignmentScore(execPolicy, set1, set2, scoreMat);
+            auto res = globalAlignmentScore(execPolicy, set1, set2, scoreMat);
             stop(mTimer);
             seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
             break;
@@ -123,20 +117,86 @@ BenchmarkExecutor::runAlignment(AlignBenchOptions & options,
         {
             resize(options.stats.scores, length(set1), Exact());
             start(mTimer);
-            res = localAlignmentScore(execPolicy, set1, set2, scoreMat);
+            auto res = localAlignmentScore(execPolicy, set1, set2, scoreMat);
             stop(mTimer);
             seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
             break;
         }
         case AlignMethod::SEMIGLOBAL:
+        {
             resize(options.stats.scores, length(set1), Exact());
             start(mTimer);
-            res = globalAlignmentScore(execPolicy, set1, set2, scoreMat, AlignConfig<true, false, false, true>{});
+            auto res = globalAlignmentScore(execPolicy, set1, set2, scoreMat, AlignConfig<true, false, false, true>{});
             stop(mTimer);
             seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
             break;
+        }
+        case AlignMethod::OVERLAP:
+        {
+            resize(options.stats.scores, length(set1), Exact());
+            start(mTimer);
+            auto res = globalAlignmentScore(execPolicy, set1, set2, scoreMat, AlignConfig<true, true, true, true>{});
+            stop(mTimer);
+            seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
+            break;
+        }
     }
     writeScores(options);
 }
 
+#if defined(ALIGN_BENCH_BANDED)
+template <typename TExecPolicy,
+          typename TSet1,
+          typename TSet2,
+          typename TScore>
+inline void
+BenchmarkExecutor::runAlignmentBanded(AlignBenchOptions & options,
+                                      TExecPolicy const & execPolicy,
+                                      TSet1 const & set1,
+                                      TSet2 const & set2,
+                                      TScore const & scoreMat)
+{
+    options.stats.isBanded = "yes";
+    switch (options.method)
+    {
+        case AlignMethod::GLOBAL:
+        {
+            resize(options.stats.scores, length(set1), Exact());
+            start(mTimer);
+            auto res = globalAlignmentScore(execPolicy, set1, set2, scoreMat, options.lower, options.upper);
+            stop(mTimer);
+            seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
+            break;
+        }
+        case AlignMethod::LOCAL:
+        {
+            resize(options.stats.scores, length(set1), Exact());
+            start(mTimer);
+            auto res = localAlignmentScore(execPolicy, set1, set2, scoreMat, options.lower, options.upper);
+            stop(mTimer);
+            seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
+            break;
+        }
+        case AlignMethod::SEMIGLOBAL:
+        {
+            resize(options.stats.scores, length(set1), Exact());
+            start(mTimer);
+            auto res = globalAlignmentScore(execPolicy, set1, set2, scoreMat, AlignConfig<true, false, false, true>{}, options.lower, options.upper);
+            stop(mTimer);
+            seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
+            break;
+        }
+        case AlignMethod::OVERLAP:
+        {
+            resize(options.stats.scores, length(set1), Exact());
+            start(mTimer);
+            auto res = globalAlignmentScore(execPolicy, set1, set2, scoreMat, AlignConfig<true, true, true, true>{}, options.lower, options.upper);
+            stop(mTimer);
+            seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
+            break;
+        }
+    }
+    writeScores(options);
+}
+#endif // ALIGN_BENCH_BANDED
 #endif // ALIGN_BENCH_SEQAN_HPP

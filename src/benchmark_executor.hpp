@@ -64,6 +64,18 @@ public:
                              TSet2 const &,
                              TScore const &);
 
+ #if defined(ALIGN_BENCH_BANDED)
+     template <typename TExecPolicy,
+               typename TSet1,
+               typename TSet2,
+               typename TScore>
+     inline void runAlignmentBanded(AlignBenchOptions &,
+                                    TExecPolicy const &,
+                                    TSet1 const &,
+                                    TSet2 const &,
+                                    TScore const &);
+#endif // ALIGN_BENCH_BANDED
+
     template <typename TStream>
     inline void
     printProfile(TStream && stream)

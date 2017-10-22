@@ -44,9 +44,6 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
     addOption(parser, seqan::ArgParseOption("t", "threads", "Number of threads", seqan::ArgParseArgument::INTEGER, "INT"));
     setDefaultValue(parser, "t", toString(std::thread::hardware_concurrency()));
 
-    addOption(parser, seqan::ArgParseOption("", "lower-diagonal", "Lower diagonal of band.", seqan::ArgParseArgument::INTEGER, "INT"));
-    addOption(parser, seqan::ArgParseOption("", "upper-diagonal", "Upper diagonal of band.", seqan::ArgParseArgument::INTEGER, "INT"));
-
     // Parse command line.
     if (parse(parser, argc, argv) != ArgumentParser::PARSE_OK)
         return ArgumentParser::PARSE_ERROR;
@@ -58,12 +55,6 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
         return ArgumentParser::PARSE_ERROR;
 
     getOptionValue(options.threadCount, parser, "t");
-    if (isSet(parser, "lower-diagonal") && isSet(parser, "upper-diagonal"))
-    {
-        options.isBanded = true;
-        getOptionValue(options.lower, parser, "lower-diagonal");
-        getOptionValue(options.upper, parser, "upper-diagonal");
-    }
 
     return ArgumentParser::PARSE_OK;
 }
@@ -91,10 +82,10 @@ int main(int argc, char* argv[])
     }
     else
     {
-        options.stats.execPolicy = "parallel";
-        seqan::ExecutionPolicy<seqan::Parallel, seqan::Serial> exec_policy;
-        setNumThreads(exec_policy, options.threadCount);
-        configureAlpha(options, exec_policy);
+        // options.stats.execPolicy = "parallel";
+        // seqan::ExecutionPolicy<seqan::Parallel, seqan::Serial> exec_policy;
+        // setNumThreads(exec_policy, options.threadCount);
+        // configureAlpha(options, exec_policy);
     }
 
     options.stats.state = "done";
