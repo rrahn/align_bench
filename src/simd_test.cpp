@@ -84,9 +84,9 @@ int main(int argc, char* argv[])
 
     std::cout << "Reading sequences ..." << std::flush;
     StringSet<CharString> meta1;
-    StringSet<DnaString> set1;
+    StringSet<Dna5String> set1;
     StringSet<CharString> meta2;
-    StringSet<DnaString> set2;
+    StringSet<Dna5String> set2;
     try {
         SeqFileIn queryFile{options.queryFile.c_str()};
         readRecords(meta1, set1, queryFile);
@@ -131,9 +131,9 @@ int main(int argc, char* argv[])
     TSimdVector mismatch = createVector<TSimdVector>(-4);
     TSimdVector infinity = createVector<TSimdVector>(minValue<int16_t>() / 2);
 
-    TSimdVector tmpD;
-    TSimdVector tmp;
-    TSimdVector colVert;
+    // TSimdVector tmpD;
+    // TSimdVector tmp;
+    // TSimdVector colVert;
 
     String<TSimdVector, Alloc<OverAligned>> colDiag;
     String<TSimdVector, Alloc<OverAligned>> colHori;
@@ -149,32 +149,44 @@ int main(int argc, char* argv[])
         auto & bufferV = blockBufferV[i];
 
         colDiag[0] = createVector<TSimdVector>(0);
-        colHori[0] = infinity;
-        colVert    = gapOpen;
+        colHori[0] = gapOpen;
+        TSimdVector colVert    = gapOpen;
 
         for (unsigned i = 1; i < length(colDiag); ++i)
         {
-            colHori[i] = infinity;
             colDiag[i] = colVert;
+            colHori[i] = colDiag[i] + gapOpen;
             colVert    += gapExtend;
         }
 
         /* start the recursion */
         for (unsigned col = 1; col < length(bufferH) + 1; ++col)
         {
-            tmpD = colDiag[0];
-            tmp;
-            colVert = infinity;
-            colHori[0] = max(colHori[0] + gapExtend, tmpD + gapOpen);
+            TSimdVector valueH = bufferH[col - 1];
+
+            TSimdVector H = colDiag[0];
             colDiag[0] = colHori[0];
+            colHori[0] += gapExtend;
+            colVert = colDiag[0] + gapOpen;
 
             for (unsigned row = 1; row < length(bufferV) + 1; ++row)
             {
-                colHori[row] = max(colHori[row] + gapExtend, colDiag[row] + gapOpen);
-                colVert      = max(colVert + gapExtend, colDiag[row - 1] + gapOpen);
-                tmp          = tmpD + blend(mismatch, match, cmpEq(bufferH[col - 1], bufferV[row - 1]));
-                tmpD         = colDiag[row];
-                colDiag[row] = max(tmp, max(colHori[row], colVert));
+                // H += blend(mismatch, match, cmpEq(valueH, bufferV[row - 1]));
+                H = max(H + blend(mismatch, match, cmpEq(valueH, bufferV[row - 1])), max(colHori[row],colVert));
+                TSimdVector N = H;
+                // colVert -= gapExtend;
+                // colHori[row] -= gapExtend;
+                // H -= gapOpen;
+                colVert = max(colVert - gapExtend, H - gapOpen);
+                colHori[row] = max(colHori[row] - gapExtend, H - gapOpen);
+                // cache prevDiag
+                H = colDiag[row];
+                colDiag[row] = N;
+                // colHori[row]    = max(colHori[row] + gapExtend, colDiag[row] + gapOpen);
+                // colVert         = max(colVert + gapExtend, H + gapOpen);
+                // TSimdVector tmp = H + blend(mismatch, match, cmpEq(valueH, bufferV[row - 1]));
+                // H            = colDiag[row];
+                // colDiag[row]    = max(tmp, max(colHori[row], colVert));
             }
         }
         appendValue(results, colDiag[length(bufferH)]);
