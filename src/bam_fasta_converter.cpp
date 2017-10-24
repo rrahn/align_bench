@@ -94,6 +94,9 @@ int main(int argc, char* argv[])
     StringSet<Dna5String> subjects;
 
     try {
+        SeqFileOut read_file{opt.reads_out.c_str()};  // Open read output file.
+        SeqFileOut sbj_file{opt.subjects_out.c_str()};  // Open subject output file.
+
         SeqFileIn ref_file{opt.ref_file.c_str()};  // Open reference file.
         BamFileIn bam_file{opt.bam_file.c_str()};  // Open bam file.
 
@@ -103,15 +106,13 @@ int main(int argc, char* argv[])
         BamHeader header;
         readHeader(header, bam_file);
 
-        unsigned count = 0;
         readRecords(ref_ids, ref_seqs, ref_file);
         while(!atEnd(bam_file))
         {
-            if (count % 10000 == 0)
-                std::cout << "." << std::flush;
+            std::cout << "." << std::flush;
 
             StringSet<BamAlignmentRecord> records;
-            readRecords(records, bam_file, 10000);
+            readRecords(records, bam_file, 1000000);
 
             auto extract_seq = [&](auto & align_row)
             {
@@ -125,19 +126,23 @@ int main(int argc, char* argv[])
                 return seq;
             };
 
-            size_t old_size = length(reads_id);
-            resize(reads_id, old_size + length(records));
-            resize(reads, old_size + length(records));
-            resize(subjects_id, old_size + length(records));
-            resize(subjects, old_size + length(records));
+            clear(reads_id);
+            clear(reads);
+            clear(subjects_id);
+            clear(subjects);
+
+            resize(reads_id, length(records));
+            resize(reads, length(records));
+            resize(subjects_id, length(records));
+            resize(subjects, length(records));
 
             Splitter<decltype(begin(records, Standard()))> splitter(begin(records, Standard()), end(records, Standard()));
 
-            SEQAN_OMP_PRAGMA(parallel for shared(ref_ids, ref_seqs, reads_id, reads, subjects_id, subjects, records) firstprivate(old_size) num_threads(length(splitter)))
+            SEQAN_OMP_PRAGMA(parallel for shared(ref_ids, ref_seqs, reads_id, reads, subjects_id, subjects, records) num_threads(length(splitter)))
             for (int job = 0; job < static_cast<int>(length(splitter)); ++job)
             {
 
-                auto write_pos = old_size + (splitter[job] - begin(records, Standard()));
+                auto write_pos = splitter[job] - begin(records, Standard());
                 // SEQAN_OMP_PRAGMA(critical)
                 // {
                 //     std::cout << omp_get_thread_num() << ": " << write_pos << std::endl;
@@ -159,25 +164,10 @@ int main(int argc, char* argv[])
                 }
             }
 
+            writeRecords(read_file, reads_id, reads);
+            writeRecords(sbj_file, subjects_id, subjects);
+
         }
-    } catch(seqan::ParseError & e)
-    {
-        std::cerr << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-    catch(seqan::IOError & e)
-    {
-        std::cerr << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    try
-    {
-        SeqFileOut read_file{opt.reads_out.c_str()};  // Open read output file.
-        SeqFileOut sbj_file{opt.subjects_out.c_str()};  // Open subject output file.
-
-        writeRecords(read_file, reads_id, reads);
-        writeRecords(sbj_file, subjects_id, subjects);
     } catch(seqan::ParseError & e)
     {
         std::cerr << e.what() << std::endl;
