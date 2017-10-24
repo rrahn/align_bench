@@ -88,11 +88,6 @@ int main(int argc, char* argv[])
     if (parseCommandLine(opt, argc, argv) != ArgumentParser::PARSE_OK)
         return EXIT_FAILURE;
 
-    StringSet<CharString> reads_id;
-    StringSet<Dna5String> reads;
-    StringSet<CharString> subjects_id;
-    StringSet<Dna5String> subjects;
-
     try {
         SeqFileOut read_file{opt.reads_out.c_str()};  // Open read output file.
         SeqFileOut sbj_file{opt.subjects_out.c_str()};  // Open subject output file.
@@ -126,46 +121,70 @@ int main(int argc, char* argv[])
                 return seq;
             };
 
-            clear(reads_id);
-            clear(reads);
-            clear(subjects_id);
-            clear(subjects);
+            // clear(reads_id);
+            // clear(reads);
+            // clear(subjects_id);
+            // clear(subjects);
+            //
+            // resize(reads_id, length(records));
+            // resize(reads, length(records));
+            // resize(subjects_id, length(records));
+            // resize(subjects, length(records));
 
-            resize(reads_id, length(records));
-            resize(reads, length(records));
-            resize(subjects_id, length(records));
-            resize(subjects, length(records));
+            StringSet<CharString> reads_id_local;
+            StringSet<Dna5String> reads_local;
+            StringSet<CharString> subjects_id_local;
+            StringSet<Dna5String> subjects_local;
 
             Splitter<decltype(begin(records, Standard()))> splitter(begin(records, Standard()), end(records, Standard()));
 
-            SEQAN_OMP_PRAGMA(parallel for shared(ref_ids, ref_seqs, reads_id, reads, subjects_id, subjects, records) num_threads(length(splitter)))
+            SEQAN_OMP_PRAGMA(parallel for private(reads_id_local, reads_local, subjects_id_local, subjects_local)
+                                          num_threads(length(splitter)))
             for (int job = 0; job < static_cast<int>(length(splitter)); ++job)
             {
 
                 auto write_pos = splitter[job] - begin(records, Standard());
+
+                clear(reads_id_local);
+                clear(reads_local);
+                clear(subjects_id_local);
+                clear(subjects_local);
+
+                reserve(reads_id_local, splitter[job + 1] - splitter[job]);
+                reserve(reads_local, splitter[job + 1] - splitter[job]);
+                reserve(subjects_id_local, splitter[job + 1] - splitter[job]);
+                reserve(subjects_local, splitter[job + 1] - splitter[job]);
                 // SEQAN_OMP_PRAGMA(critical)
                 // {
                 //     std::cout << omp_get_thread_num() << ": " << write_pos << std::endl;
                 // }
                 for (auto it = splitter[job]; it != splitter[job + 1]; ++it)
                 {
+                    if ((*it).rID == -1)
+                    {
+                        continue;
+                    }
                     Align<Dna5String> align;
                     bamRecordToAlignment(align, ref_seqs[(*it).rID], *it);
 
-                    reads_id[write_pos] = (*it).qName;
-                    reads[write_pos] = extract_seq(row(align, 1));
+                    appendValue(reads_id_local,  (*it).qName);
+                    appendValue(reads_local, extract_seq(row(align, 1)));
 
                     CharString sbj_id{ref_ids[(*it).rID]};
                     append(sbj_id, "_");
                     append(sbj_id, (*it).qName);
-                    subjects_id[write_pos] = sbj_id;
-                    subjects[write_pos] = extract_seq(row(align, 0));
+                    appendValue(subjects_id_local, sbj_id);
+                    appendValue(subjects_local, extract_seq(row(align, 0)));
                     ++write_pos;
                 }
-            }
 
-            writeRecords(read_file, reads_id, reads);
-            writeRecords(sbj_file, subjects_id, subjects);
+                // This section must be serialized.
+                SEQAN_OMP_PRAGMA(critical)
+                {
+                    writeRecords(read_file, reads_id_local, reads_local);
+                    writeRecords(sbj_file, subjects_id_local, subjects_local);
+                }
+            }
 
         }
     } catch(seqan::ParseError & e)
