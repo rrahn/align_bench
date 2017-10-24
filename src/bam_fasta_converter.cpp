@@ -130,62 +130,59 @@ int main(int argc, char* argv[])
             // resize(reads, length(records));
             // resize(subjects_id, length(records));
             // resize(subjects, length(records));
+            size_t threadNum = std::thread::hardware_concurrency();
 
-            StringSet<CharString> reads_id_local;
-            StringSet<Dna5String> reads_local;
-            StringSet<CharString> subjects_id_local;
-            StringSet<Dna5String> subjects_local;
+            std::vector<StringSet<CharString>> reads_id_local(threadNum);
+            std::vector<StringSet<Dna5String>> reads_local(threadNum);
+            std::vector<StringSet<CharString>> subjects_id_local(threadNum);
+            std::vector<StringSet<Dna5String>> subjects_local(threadNum);
 
             Splitter<decltype(begin(records, Standard()))> splitter(begin(records, Standard()), end(records, Standard()));
 
-            SEQAN_OMP_PRAGMA(parallel for private(reads_id_local, reads_local, subjects_id_local, subjects_local)
-                                          num_threads(length(splitter)))
-            for (int job = 0; job < static_cast<int>(length(splitter)); ++job)
+            SEQAN_OMP_PRAGMA(parallel for schedule(dynamic, 1000) num_threads(threadNum))
+            for (int i = 0; i < length(records); ++i)
+            // for (int job = 0; job < static_cast<int>(length(splitter)); ++job)
             {
-
-                auto write_pos = splitter[job] - begin(records, Standard());
-
-                clear(reads_id_local);
-                clear(reads_local);
-                clear(subjects_id_local);
-                clear(subjects_local);
-
-                reserve(reads_id_local, splitter[job + 1] - splitter[job]);
-                reserve(reads_local, splitter[job + 1] - splitter[job]);
-                reserve(subjects_id_local, splitter[job + 1] - splitter[job]);
-                reserve(subjects_local, splitter[job + 1] - splitter[job]);
+                auto it = begin(records, Standard()) + i;
+                size_t thread_id = omp_get_thread_num();
+                // clear(reads_id_local[thread_id]);
+                // clear(reads_local[thread_id]);
+                // clear(subjects_id_local[thread_id]);
+                // clear(subjects_local[thread_id]);
+                //
+                // reserve(reads_id_local[thread_id], length(records));
+                // reserve(reads_local[thread_id], length(records));
+                // reserve(subjects_id_local[thread_id], length(records));
+                // reserve(subjects_local[thread_id], length(records));
                 // SEQAN_OMP_PRAGMA(critical)
                 // {
                 //     std::cout << omp_get_thread_num() << ": " << write_pos << std::endl;
                 // }
-                for (auto it = splitter[job]; it != splitter[job + 1]; ++it)
+                // for (auto it = begin(records, Standard()); it != end(records, Standard()); ++it)
+                // {
+                if ((*it).rID == -1)
                 {
-                    if ((*it).rID == -1)
-                    {
-                        continue;
-                    }
-                    Align<Dna5String> align;
-                    bamRecordToAlignment(align, ref_seqs[(*it).rID], *it);
-
-                    appendValue(reads_id_local,  (*it).qName);
-                    appendValue(reads_local, extract_seq(row(align, 1)));
-
-                    CharString sbj_id{ref_ids[(*it).rID]};
-                    append(sbj_id, "_");
-                    append(sbj_id, (*it).qName);
-                    appendValue(subjects_id_local, sbj_id);
-                    appendValue(subjects_local, extract_seq(row(align, 0)));
-                    ++write_pos;
+                    continue;
                 }
+                Align<Dna5String, AnchorGaps<>> align;
+                bamRecordToAlignment(align, ref_seqs[(*it).rID], *it);
 
-                // This section must be serialized.
-                SEQAN_OMP_PRAGMA(critical)
-                {
-                    writeRecords(read_file, reads_id_local, reads_local);
-                    writeRecords(sbj_file, subjects_id_local, subjects_local);
-                }
+                appendValue(reads_id_local[thread_id], (*it).qName);
+                appendValue(reads_local[thread_id], extract_seq(row(align, 1)));
+
+                CharString sbj_id{ref_ids[(*it).rID]};
+                append(sbj_id, "_");
+                append(sbj_id, (*it).qName);
+                appendValue(subjects_id_local[thread_id], sbj_id);
+                appendValue(subjects_local[thread_id], extract_seq(row(align, 0)));
+                // }
             }
-
+            // This section must be serialized.
+            for (unsigned  i = 0; i < threadNum; ++i)
+            {
+                writeRecords(read_file, reads_id_local[i], reads_local[i]);
+                writeRecords(sbj_file, subjects_id_local[i], subjects_local[i]);
+            }
         }
     } catch(seqan::ParseError & e)
     {
