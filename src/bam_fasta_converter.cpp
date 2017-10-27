@@ -101,13 +101,15 @@ int main(int argc, char* argv[])
         BamHeader header;
         readHeader(header, bam_file);
 
+        size_t numRecords = 100000;
+
         readRecords(ref_ids, ref_seqs, ref_file);
         while(!atEnd(bam_file))
         {
-            std::cout << "." << std::flush;
+            std::cout << "Load next chunk\n" << std::flush;
 
             StringSet<BamAlignmentRecord> records;
-            readRecords(records, bam_file, 1000000);
+            readRecords(records, bam_file, numRecords);
 
             auto extract_seq = [&](auto & align_row)
             {
@@ -132,14 +134,21 @@ int main(int argc, char* argv[])
             // resize(subjects, length(records));
             size_t threadNum = std::thread::hardware_concurrency();
 
-            std::vector<StringSet<CharString>> reads_id_local(threadNum);
-            std::vector<StringSet<Dna5String>> reads_local(threadNum);
-            std::vector<StringSet<CharString>> subjects_id_local(threadNum);
-            std::vector<StringSet<Dna5String>> subjects_local(threadNum);
+            std::vector<String<CharString>> reads_id_local(threadNum);
+            std::vector<String<Dna5String>> reads_local(threadNum);
+            std::vector<String<CharString>> subjects_id_local(threadNum);
+            std::vector<String<Dna5String>> subjects_local(threadNum);
 
-            Splitter<decltype(begin(records, Standard()))> splitter(begin(records, Standard()), end(records, Standard()));
+            for (unsigned  i = 0; i < threadNum; ++i)
+            {
+                reserve(reads_id_local[i],    numRecords);
+                reserve(reads_local[i],       numRecords);
+                reserve(subjects_id_local[i], numRecords);
+                reserve(subjects_local[i],    numRecords);
+            }
 
-            SEQAN_OMP_PRAGMA(parallel for schedule(dynamic, 1000) num_threads(threadNum))
+            std::cout << "Start extracting\n" << std::flush;
+            SEQAN_OMP_PRAGMA(parallel for schedule(dynamic) num_threads(threadNum))
             for (int i = 0; i < length(records); ++i)
             // for (int job = 0; job < static_cast<int>(length(splitter)); ++job)
             {
@@ -167,16 +176,22 @@ int main(int argc, char* argv[])
                 Align<Dna5String, AnchorGaps<>> align;
                 bamRecordToAlignment(align, ref_seqs[(*it).rID], *it);
 
-                appendValue(reads_id_local[thread_id], (*it).qName);
-                appendValue(reads_local[thread_id], extract_seq(row(align, 1)));
+                appendValue(reads_id_local[thread_id], (*it).qName, Generous());
+                appendValue(reads_local[thread_id], extract_seq(row(align, 1)), Generous());
+//                std::cout << "length(reads_local[thread_id]) = " << length(back(reads_local[thread_id])) << std::endl;
 
                 CharString sbj_id{ref_ids[(*it).rID]};
                 append(sbj_id, "_");
                 append(sbj_id, (*it).qName);
-                appendValue(subjects_id_local[thread_id], sbj_id);
-                appendValue(subjects_local[thread_id], extract_seq(row(align, 0)));
+                appendValue(subjects_id_local[thread_id], sbj_id, Generous());
+                appendValue(subjects_local[thread_id], extract_seq(row(align, 0)), Generous());
+                printf("t_%d: read = %d - ref = %d\n", omp_get_thread_num(), length(back(reads_local[thread_id])),
+                length(back(subjects_local[thread_id])));
+                //printf();
+                //std::cout << "length(subjects_local[thread_id]) = " << length(back(subjects_local[thread_id])) << std::endl;
                 // }
             }
+            std::cout << "Dump to file\n\n" << std::flush;
             // This section must be serialized.
             for (unsigned  i = 0; i < threadNum; ++i)
             {
