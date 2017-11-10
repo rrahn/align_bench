@@ -54,14 +54,36 @@ class BenchmarkExecutor
 {
 public:
 
+#if defined(ALIGN_BENCH_TRACE)
+    template <typename TExecPolicy,
+              typename TSet1,
+              typename TSet2,
+              typename TScore>
+    inline void runAlignmentTrace(AlignBenchOptions &,
+                                  TExecPolicy const &,
+                                  TSet1 &,
+                                  TSet2 &,
+                                  TScore const &);
+#if defined(ALIGN_BENCH_BANDED)
+    template <typename TExecPolicy,
+              typename TSet1,
+              typename TSet2,
+              typename TScore>
+    inline void runAlignmentBandedTrace(AlignBenchOptions &,
+                                        TExecPolicy const &,
+                                        TSet1 &,
+                                        TSet2 &,
+                                        TScore const &);
+#endif // ALIGN_BENCH_BANDED
+#else // ALIGN_BENCH_TRACE
     template <typename TExecPolicy,
               typename TSet1,
               typename TSet2,
               typename TScore>
     inline void runAlignment(AlignBenchOptions &,
                              TExecPolicy const &,
-                             TSet1 const &,
-                             TSet2 const &,
+                             TSet1 &,
+                             TSet2 &,
                              TScore const &);
 
  #if defined(ALIGN_BENCH_BANDED)
@@ -75,6 +97,7 @@ public:
                                     TSet2 const &,
                                     TScore const &);
 #endif // ALIGN_BENCH_BANDED
+#endif // ALIGN_BENCH_TRACE
 
     template <typename TStream>
     inline void

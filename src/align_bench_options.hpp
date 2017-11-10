@@ -201,6 +201,7 @@ struct AlignBenchOptions
     bool     simd{false};
     bool     blockOptimization{false};
     bool     isBanded{false};
+    bool     traceEnabled{false};
     AlignmentMode mode;
     AlignMethod  method;
     ParallelMode parMode = ParallelMode::SEQUENTIAL;

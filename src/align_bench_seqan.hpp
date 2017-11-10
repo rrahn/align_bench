@@ -43,13 +43,24 @@
 using namespace seqan;
 
 
-template <typename TAlignObject>
+template <typename TGapsH, typename TGapsV>
 inline void writeAlignment(AlignBenchOptions const & options,
-                           TAlignObject const & align)
+                           TGapsH const & gapsH,
+                           TGapsV const & gapsV)
 {
+    auto printGaps = [&](auto & stream)
+    {
+        for (unsigned i = 0; i < length(gapsH); ++i)
+        {
+            stream << "Alignment no. " << i << std::endl;
+            stream << "Score: " << options.stats.scores[i] << std::endl;
+            stream << gapsH[i] << std::endl;
+            stream << gapsV[i] << std::endl;
+        }
+    };
     if (options.alignOut == "stdout")
     {
-        std::cout << align << std::endl;
+        printGaps(std::cout);
         return;
     }
 
@@ -60,7 +71,7 @@ inline void writeAlignment(AlignBenchOptions const & options,
         std::cerr << "Could not open file << " << options.alignOut.c_str() << ">>!" << std::endl;
         return;
     }
-    alignOut << align;
+    printGaps(alignOut);
     alignOut.close();
 }
 
@@ -90,6 +101,149 @@ inline void writeScores(AlignBenchOptions const & options)
     }
 }
 
+#if defined(ALIGN_BENCH_TRACE)
+template <typename TExecPolicy,
+          typename TSet1,
+          typename TSet2,
+          typename TScore>
+inline void
+BenchmarkExecutor::runAlignmentTrace(AlignBenchOptions & options,
+                                     TExecPolicy const & execPolicy,
+                                     TSet1 & set1,
+                                     TSet2 & set2,
+                                     TScore const & scoreMat)
+{
+    options.stats.isBanded = "no";
+    using TSeqH = typename Value<TSet1>::Type;
+    using TSeqV = typename Value<TSet2>::Type;
+    StringSet<Gaps<TSeqH>> gapsSet1;
+    StringSet<Gaps<TSeqV>> gapsSet2;
+
+    auto fillGaps = [](auto & gaps, auto & sequences)
+    {
+        resize(gaps, length(sequences), Exact{});
+        for (unsigned i = 0; i < length(sequences); ++i)
+        {
+            assignSource(gaps[i], sequences[i]);
+        }
+    };
+    fillGaps(gapsSet1, set1);
+    fillGaps(gapsSet2, set2);
+
+    switch (options.method)
+    {
+        case AlignMethod::GLOBAL:
+        {
+            resize(options.stats.scores, length(gapsSet1), Exact());
+            start(mTimer);
+            auto res = globalAlignment(execPolicy, gapsSet1, gapsSet2, scoreMat);
+            stop(mTimer);
+            seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
+            break;
+        }
+        case AlignMethod::LOCAL:
+        {
+            resize(options.stats.scores, length(gapsSet1), Exact());
+            start(mTimer);
+            auto res = localAlignment(execPolicy, gapsSet1, gapsSet2, scoreMat);
+            stop(mTimer);
+            seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
+            break;
+        }
+        case AlignMethod::SEMIGLOBAL:
+        {
+            resize(options.stats.scores, length(gapsSet1), Exact());
+            start(mTimer);
+            auto res = globalAlignment(execPolicy, gapsSet1, gapsSet2, scoreMat, AlignConfig<true, false, false, true>{});
+            stop(mTimer);
+            seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
+            break;
+        }
+        case AlignMethod::OVERLAP:
+        {
+            resize(options.stats.scores, length(gapsSet1), Exact());
+            start(mTimer);
+            auto res = globalAlignment(execPolicy, gapsSet1, gapsSet2, scoreMat, AlignConfig<true, true, true, true>{});
+            stop(mTimer);
+            seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
+            break;
+        }
+    }
+    writeAlignment(options, gapsSet1, gapsSet2);
+}
+
+template <typename TExecPolicy,
+          typename TSet1,
+          typename TSet2,
+          typename TScore>
+inline void
+BenchmarkExecutor::runAlignmentBandedTrace(AlignBenchOptions & options,
+                                           TExecPolicy const & execPolicy,
+                                           TSet1 & set1,
+                                           TSet2 & set2,
+                                           TScore const & scoreMat)
+{
+    options.stats.isBanded = "yes";
+
+    using TSeqH = typename Value<TSet1>::Type;
+    using TSeqV = typename Value<TSet2>::Type;
+    StringSet<Gaps<TSeqH>> gapsSet1;
+    StringSet<Gaps<TSeqV>> gapsSet2;
+
+    auto fillGaps = [](auto & gaps, auto & sequences)
+    {
+        resize(gaps, length(sequences), Exact{});
+        for (unsigned i = 0; i < length(sequences); ++i)
+        {
+            assignSource(gaps[i], sequences[i]);
+        }
+    };
+    fillGaps(gapsSet1, set1);
+    fillGaps(gapsSet2, set2);
+
+    switch (options.method)
+    {
+        case AlignMethod::GLOBAL:
+        {
+            resize(options.stats.scores, length(gapsSet1), Exact());
+            start(mTimer);
+            auto res = globalAlignment(execPolicy, gapsSet1, gapsSet2, scoreMat, options.lower, options.upper);
+            stop(mTimer);
+            seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
+            break;
+        }
+        case AlignMethod::LOCAL:
+        {
+            resize(options.stats.scores, length(gapsSet1), Exact());
+            start(mTimer);
+            auto res = localAlignment(execPolicy, gapsSet1, gapsSet2, scoreMat, options.lower, options.upper);
+            stop(mTimer);
+            seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
+            break;
+        }
+        case AlignMethod::SEMIGLOBAL:
+        {
+            resize(options.stats.scores, length(gapsSet1), Exact());
+            start(mTimer);
+            auto res = globalAlignment(execPolicy, gapsSet1, gapsSet2, scoreMat, AlignConfig<true, false, false, true>{}, options.lower, options.upper);
+            stop(mTimer);
+            seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
+            break;
+        }
+        case AlignMethod::OVERLAP:
+        {
+            resize(options.stats.scores, length(gapsSet1), Exact());
+            start(mTimer);
+            auto res = globalAlignment(execPolicy, gapsSet1, gapsSet2, scoreMat, AlignConfig<true, true, true, true>{}, options.lower, options.upper);
+            stop(mTimer);
+            seqan::arrayMoveForward(begin(res, Standard()), end(res, Standard()), begin(options.stats.scores, Standard()));
+            break;
+        }
+    }
+    writeAlignment(options, gapsSet1, gapsSet2);
+}
+
+#else // ALIGN_BENCH_TRACE
 template <typename TExecPolicy,
           typename TSet1,
           typename TSet2,
@@ -97,8 +251,8 @@ template <typename TExecPolicy,
 inline void
 BenchmarkExecutor::runAlignment(AlignBenchOptions & options,
                                 TExecPolicy const & execPolicy,
-                                TSet1 const & set1,
-                                TSet2 const & set2,
+                                TSet1 & set1,
+                                TSet2 & set2,
                                 TScore const & scoreMat)
 {
     options.stats.isBanded = "no";
@@ -199,4 +353,5 @@ BenchmarkExecutor::runAlignmentBanded(AlignBenchOptions & options,
     writeScores(options);
 }
 #endif // ALIGN_BENCH_BANDED
+#endif // ALIGN_BENCH_TRACE
 #endif // ALIGN_BENCH_SEQAN_HPP

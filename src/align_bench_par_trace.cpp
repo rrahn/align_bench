@@ -6,6 +6,7 @@
 //#define DP_ALIGN_STATS
 
 #define ALIGN_BENCH_BANDED
+#define ALIGN_BENCH_TRACE
 
 #ifdef DP_ALIGN_STATS
 std::atomic<uint32_t> simdCounter;
@@ -33,7 +34,7 @@ using namespace seqan;
 inline ArgumentParser::ParseResult
 parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
 {
-    ArgumentParser parser("align_bench_seq_trace");
+    ArgumentParser parser("align_bench_par_trace");
 
     setShortDescription(parser, "Alignment Benchmark Tool");
     setVersion(parser, SEQAN_APP_VERSION " [" SEQAN_REVISION "]");
@@ -41,15 +42,23 @@ parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
 
     setup_parser(parser);
 
+    addOption(parser, seqan::ArgParseOption("t", "threads", "Number of threads", seqan::ArgParseArgument::INTEGER, "INT"));
+    setDefaultValue(parser, "t", toString(std::thread::hardware_concurrency()));
+
     // Parse command line.
     if (parse(parser, argc, argv) != ArgumentParser::PARSE_OK)
         return ArgumentParser::PARSE_ERROR;
 
     get_arguments(options, parser);
 
+    // Parse command line.
+    if (parse(parser, argc, argv) != ArgumentParser::PARSE_OK)
+        return ArgumentParser::PARSE_ERROR;
+
+    getOptionValue(options.threadCount, parser, "t");
+
     return ArgumentParser::PARSE_OK;
 }
-
 
 int main(int argc, char* argv[])
 {
@@ -63,19 +72,21 @@ int main(int argc, char* argv[])
     simdCounter = 0;
     serialCounter = 0;
 #endif
-
-    options.stats.execPolicy = "sequential";
-    options.stats.threads = 1;
-
+    options.stats.threads = options.threadCount;
     if (options.simd)
     {
-        seqan::ExecutionPolicy<seqan::Serial, seqan::Vectorial> exec_policy;
+        options.stats.execPolicy = "parallel_vec";
+        options.stats.vectorLength = SEQAN_SIZEOF_MAX_VECTOR / static_cast<unsigned>(options.simdWidth);
+        seqan::ExecutionPolicy<seqan::Parallel, seqan::Vectorial> exec_policy;
+        setNumThreads(exec_policy, options.threadCount);
         configureAlpha(options, exec_policy);
     }
     else
     {
-        seqan::ExecutionPolicy<seqan::Serial, seqan::Serial> exec_policy;
-        configureAlpha(options, exec_policy);
+        // options.stats.execPolicy = "parallel";
+        // seqan::ExecutionPolicy<seqan::Parallel, seqan::Serial> exec_policy;
+        // setNumThreads(exec_policy, options.threadCount);
+        // configureAlpha(options, exec_policy);
     }
 
     options.stats.state = "done";

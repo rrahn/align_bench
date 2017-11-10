@@ -6,6 +6,7 @@
 //#define DP_ALIGN_STATS
 
 #define ALIGN_BENCH_BANDED
+#define ALIGN_BENCH_TRACE
 
 #ifdef DP_ALIGN_STATS
 std::atomic<uint32_t> simdCounter;
@@ -33,7 +34,7 @@ using namespace seqan;
 inline ArgumentParser::ParseResult
 parseCommandLine(AlignBenchOptions & options, int const argc, char* argv[])
 {
-    ArgumentParser parser("align_bench_seq_trace");
+    ArgumentParser parser("align_bench_seq");
 
     setShortDescription(parser, "Alignment Benchmark Tool");
     setVersion(parser, SEQAN_APP_VERSION " [" SEQAN_REVISION "]");

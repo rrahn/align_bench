@@ -54,12 +54,21 @@ inline void invoke(AlignBenchOptions & options,
 {
     std::cout << "Invoke Alignment...\t" << std::flush;
     BenchmarkExecutor device;
+#if defined(ALIGN_BENCH_TRACE)
+#if defined(ALIGN_BENCH_BANDED)
+    if (options.isBanded)
+        device.runAlignmentBandedTrace(options, std::forward<TArgs>(args)...);
+    else
+#endif // ALIGN_BENCH_BANDED
+        device.runAlignmentTrace(options, std::forward<TArgs>(args)...);
+#else  // ALIGN_BENCH_TRACE
 #if defined(ALIGN_BENCH_BANDED)
     if (options.isBanded)
         device.runAlignmentBanded(options, std::forward<TArgs>(args)...);
     else
 #endif // ALIGN_BENCH_BANDED
         device.runAlignment(options, std::forward<TArgs>(args)...);
+#endif // ALIGN_BENCH_TRACE
     std::cout << "\t\t\tdone." << std::endl;
     device.printProfile(std::cout);
     options.stats.time = device.getTime();

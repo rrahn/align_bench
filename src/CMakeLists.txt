@@ -214,9 +214,19 @@ add_executable(align_bench_seq align_bench_seq.cpp
                            timer.hpp
                            sequence_generator.hpp
                            benchmark_executor.hpp)
-
 # Add dependencies found by find_package (SeqAn).
 target_link_libraries (align_bench_seq ${SEQAN_LIBRARIES})
+
+add_executable(align_bench_seq_trace align_bench_seq_trace.cpp
+                                     align_bench_options.hpp
+                                     align_bench_parser.hpp
+                                     align_bench_configure.hpp
+                                     timer.hpp
+                                     sequence_generator.hpp
+                                     benchmark_executor.hpp)
+
+# Add dependencies found by find_package (SeqAn).
+target_link_libraries (align_bench_seq_trace ${SEQAN_LIBRARIES})
 
 add_executable(align_bench_par align_bench_par.cpp
                            align_bench_options.hpp
@@ -228,6 +238,17 @@ add_executable(align_bench_par align_bench_par.cpp
 
 # Add dependencies found by find_package (SeqAn).
 target_link_libraries (align_bench_par ${SEQAN_LIBRARIES})
+
+add_executable(align_bench_par_trace align_bench_par_trace.cpp
+                                     align_bench_options.hpp
+                                     align_bench_parser.hpp
+                                     align_bench_configure.hpp
+                                     timer.hpp
+                                     sequence_generator.hpp
+                                     benchmark_executor.hpp)
+
+# Add dependencies found by find_package (SeqAn).
+target_link_libraries (align_bench_par_trace ${SEQAN_LIBRARIES})
 
 add_executable(align_bench_wave align_bench_wave.cpp
                            align_bench_options.hpp
