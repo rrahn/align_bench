@@ -148,7 +148,7 @@ inline void get_arguments(TOptions & options, TParser & parser)
     {
         if (options.stats.method == "global")
             options.method = AlignMethod::GLOBAL;
-        else if (options.stats.method == "semiglobal")
+        else if (options.stats.method == "semi")
             options.method = AlignMethod::SEMIGLOBAL;
         else if (options.stats.method == "overlap")
             options.method = AlignMethod::OVERLAP;
