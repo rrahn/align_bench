@@ -123,15 +123,6 @@ int main(int argc, char* argv[])
                 return seq;
             };
 
-            // clear(reads_id);
-            // clear(reads);
-            // clear(subjects_id);
-            // clear(subjects);
-            //
-            // resize(reads_id, length(records));
-            // resize(reads, length(records));
-            // resize(subjects_id, length(records));
-            // resize(subjects, length(records));
             size_t threadNum = std::thread::hardware_concurrency();
 
             std::vector<String<CharString>> reads_id_local(threadNum);
@@ -154,27 +145,15 @@ int main(int argc, char* argv[])
             {
                 auto it = begin(records, Standard()) + i;
                 size_t thread_id = omp_get_thread_num();
-                // clear(reads_id_local[thread_id]);
-                // clear(reads_local[thread_id]);
-                // clear(subjects_id_local[thread_id]);
-                // clear(subjects_local[thread_id]);
-                //
-                // reserve(reads_id_local[thread_id], length(records));
-                // reserve(reads_local[thread_id], length(records));
-                // reserve(subjects_id_local[thread_id], length(records));
-                // reserve(subjects_local[thread_id], length(records));
-                // SEQAN_OMP_PRAGMA(critical)
-                // {
-                //     std::cout << omp_get_thread_num() << ": " << write_pos << std::endl;
-                // }
-                // for (auto it = begin(records, Standard()); it != end(records, Standard()); ++it)
-                // {
                 if ((*it).rID == -1)
                 {
                     continue;
                 }
                 Align<Dna5String, AnchorGaps<>> align;
                 bamRecordToAlignment(align, ref_seqs[(*it).rID], *it);
+
+//                std::cout << "Alignment: " << std::endl;
+//                std::cout << align << std::endl;
 
                 appendValue(reads_id_local[thread_id], (*it).qName, Generous());
                 appendValue(reads_local[thread_id], extract_seq(row(align, 1)), Generous());
@@ -185,8 +164,8 @@ int main(int argc, char* argv[])
                 append(sbj_id, (*it).qName);
                 appendValue(subjects_id_local[thread_id], sbj_id, Generous());
                 appendValue(subjects_local[thread_id], extract_seq(row(align, 0)), Generous());
-                printf("t_%d: read = %d - ref = %d\n", omp_get_thread_num(), length(back(reads_local[thread_id])),
-                length(back(subjects_local[thread_id])));
+//                printf("t_%d: read = %d - ref = %d\n", omp_get_thread_num(), length(back(reads_local[thread_id])),
+//                length(back(subjects_local[thread_id])));
                 //printf();
                 //std::cout << "length(subjects_local[thread_id]) = " << length(back(subjects_local[thread_id])) << std::endl;
                 // }
