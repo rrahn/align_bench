@@ -22,3 +22,6 @@
 [submodule "software/libsdb"]
 	path = software/libsdb
 	url = https://github.com/RonnySoak/libsdb.git
+[submodule "software/ksw2"]
+	path = software/ksw2
+	url = https://github.com/lh3/ksw2.git
