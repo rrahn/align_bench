@@ -6,7 +6,7 @@
 	url = https://github.com/edanor/umesimd.git
 [submodule "lib/seqan"]
 	path = lib/seqan
-	url = https://github.com/rrahn/seqan.git
+	url = https://github.com/seqan/seqan.git
 [submodule "software/ssw"]
 	path = software/ssw
 	url = https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library.git
