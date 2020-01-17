@@ -30,6 +30,7 @@ message (STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 find_package (OpenMP)
 find_package (Umesimd)
 find_package (SeqAn REQUIRED)
+find_package (SeqAn3 REQUIRED HINTS ${CMAKE_CURRENT_LIST_DIR}/../lib/seqan3/build_system)
 
 # Warn if TBB wasn't find.
 #if (NOT TBB_FOUND)
@@ -272,3 +273,7 @@ target_link_libraries (bam2fa ${SEQAN_LIBRARIES})
 
 # Add dependencies found by find_package (SeqAn).
 # target_link_libraries (simd_test ${SEQAN_LIBRARIES})
+
+add_executable(align_bench3_parallel align_bench3_parallel.cpp)
+# Add flags and include dirs set by find_package (SeqAn3)
+target_link_libraries(align_bench3_parallel seqan3::seqan3)
