@@ -8,6 +8,7 @@
 #include <seqan3/io/sequence_file/input.hpp>
 #include <seqan3/range/views/pairwise_combine.hpp>
 #include <seqan3/range/views/take.hpp>
+#include <seqan3/range/views/zip.hpp>
 
 int main(int const argc, char const ** argv)
 {
@@ -18,7 +19,7 @@ int main(int const argc, char const ** argv)
     for (auto const & record : input_fasta)
         sequences.push_back(std::move(seqan3::get<seqan3::field::seq>(record)));
 
-    seqan3::nucleotide_scoring_scheme scoring_scheme{seqan3::match_score{4}, seqan3::mismatch_score{-5}};
+    seqan3::nucleotide_scoring_scheme scoring_scheme{seqan3::match_score{6}, seqan3::mismatch_score{-4}};
     seqan3::gap_scheme gap_scheme{seqan3::gap_score{-1}, seqan3::gap_open_score{-10}};
 
     auto configuration = seqan3::align_cfg::mode{seqan3::global_alignment} |
@@ -32,14 +33,17 @@ int main(int const argc, char const ** argv)
 
     auto start_time = std::chrono::high_resolution_clock::now();
     auto sequence_pairs = seqan3::views::pairwise_combine(sequences | seqan3::views::take(1000));
+    // auto sequence_pairs = seqan3::views::zip(sequences, sequences);
 
-    for (auto const & alignment_result : seqan3::align_pairwise(sequence_pairs, vectorised_configuration))
+    for (auto const & alignment_result : seqan3::align_pairwise(sequence_pairs, configuration))
         scores.push_back(alignment_result.score());
 
     auto end_time = std::chrono::high_resolution_clock::now();
     std::cout << std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count() << "s\n";
 	std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << "ms\n";
 
-    std::cout << "Size = " << sequences.size() << "\n";
-    std::cout << "Size = " << scores.size() << "\n";
+    for (auto const & res : scores)
+        std::cerr << res << ",\n";
+
+    std::cout << "\nDone!\n";
 }
