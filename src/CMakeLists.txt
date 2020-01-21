@@ -277,3 +277,7 @@ target_link_libraries (bam2fa ${SEQAN_LIBRARIES})
 add_executable(align_bench3_parallel align_bench3_parallel.cpp)
 # Add flags and include dirs set by find_package (SeqAn3)
 target_link_libraries(align_bench3_parallel seqan3::seqan3)
+
+add_executable(native native_alignment_function.cpp)
+# Add flags and include dirs set by find_package (SeqAn3)
+target_link_libraries(native seqan3::seqan3)
