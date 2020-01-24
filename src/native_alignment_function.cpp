@@ -26,26 +26,29 @@ int main(int const argc, char const ** argv)
     int32_t gap_open{-11};
     int32_t match{6};
     int32_t mismatch{-4};
-    int32_t minus_infinity = std::numeric_limits<int32_t>::lowest() - (gap_extension + gap_open);
     size_t sequence_index = 0;
+
+    std::vector<int32_t> optimal_column{};
+    std::vector<int32_t> horizontal_column{};
 
     // Iterate over the sequences
     for (auto && [seq1, seq2] : seqan3::views::pairwise_combine(sequences | seqan3::views::take(1000)))
     {
         // Initialise matrix
-        std::vector<int32_t> optimal_column{};
-        std::vector<int32_t> horizontal_column{};
+        optimal_column.clear();
+        horizontal_column.clear();
         optimal_column.resize(seq2.size() + 1, 0);
         horizontal_column.resize(seq2.size() + 1, 0);
         int32_t index = 0;
         int32_t diagonal{};
-        int32_t vertical{};
+        int32_t vertical{gap_open};
 
         // Initialise the first column.
         for (auto && [opt, hor] : seqan3::views::zip(optimal_column, horizontal_column) | seqan3::views::drop(1))
         {
-            opt = gap_open + gap_extension * index++;
+            opt = vertical;
             hor = opt + gap_open;
+            vertical += gap_extension;
         }
 
         // Compute the matrix
