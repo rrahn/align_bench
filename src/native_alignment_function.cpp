@@ -32,7 +32,7 @@ int main(int const argc, char const ** argv)
     std::vector<int32_t> horizontal_column{};
 
     // Iterate over the sequences
-    for (auto && [seq1, seq2] : seqan3::views::pairwise_combine(sequences | seqan3::views::take(1000)))
+    for (auto && [seq1, seq2] : seqan3::views::pairwise_combine(sequences))
     {
         // Initialise matrix
         optimal_column.clear();
