@@ -131,13 +131,13 @@ configureSequences(AlignBenchOptions & options,
             options.stats.totalCells += (1+length(tmp1[i]))*(1+length(tmp2[i]));
         }
 
-       SeqFileOut ref_out("ref_seq.fa");
-       for (unsigned i = 0; i < length(tmp1); ++i)
-           writeRecord(ref_out, "seq1", tmp1[i]);
+        // SeqFileOut ref_out("ref_seq.fa");
+        // for (unsigned i = 0; i < length(tmp1); ++i)
+        //     writeRecord(ref_out, "seq1", tmp1[i]);
 
-           SeqFileOut qry_out("qry_seq.fa");
-           for (unsigned i = 0; i < length(tmp2); ++i)
-               writeRecord(qry_out, "seq2", tmp2[i]);
+        // SeqFileOut qry_out("qry_seq.fa");
+        // for (unsigned i = 0; i < length(tmp2); ++i)
+        //     writeRecord(qry_out, "seq2", tmp2[i]);
     } else
     {
         std::cout << "Reading sequences ..." << std::flush;
