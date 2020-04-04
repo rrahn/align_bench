@@ -27,7 +27,10 @@ int main(int const argc, char const ** argv)
     auto configuration = seqan3::align_cfg::mode{seqan3::global_alignment} |
                          seqan3::align_cfg::scoring{scoring_scheme} |
                          seqan3::align_cfg::gap{gap_scheme} |
-                         seqan3::align_cfg::result{seqan3::with_score, seqan3::using_score_type<int32_t>};
+                         seqan3::align_cfg::result{seqan3::with_score, seqan3::using_score_type<int16_t>} |
+                         seqan3::align_cfg::vectorise;
+                        //   |
+                        //  seqan3::align_cfg::parallel{4};
 
     // auto vectorised_configuration = configuration | seqan3::align_cfg::vectorise;
 
