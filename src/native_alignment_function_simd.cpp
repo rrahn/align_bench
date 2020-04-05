@@ -13,6 +13,7 @@
 #include <seqan3/range/views/drop.hpp>
 #include <seqan3/range/views/take.hpp>
 #include <seqan3/range/views/to.hpp>
+#include <seqan3/range/views/type_reduce.hpp>
 #include <seqan3/range/views/zip.hpp>
 #include <seqan3/std/ranges>
 
@@ -26,9 +27,15 @@ int main(int const argc, char const ** argv)
     for (auto && rec : input)
         sequences.push_back(std::move(seqan3::get<seqan3::field::seq>(rec)));
 
-    using time_t = decltype(std::chrono::high_resolution_clock::now());
-    using duration_t = decltype(std::declval<time_t>() - std::declval<time_t>());
-    duration_t duration{};
+    using time_t = typename std::chrono::high_resolution_clock::time_point;
+    using duration_type = typename std::chrono::high_resolution_clock::duration;
+    // duration_t duration{};
+
+    duration_type duration_prep{};
+    duration_type duration_algo{};
+    duration_type duration_res{};
+
+    time_t start_total = std::chrono::high_resolution_clock::now();
 
     std::vector<int32_t> results{};
     score_t gap_extension{seqan3::simd::fill<score_t>(-1)};
@@ -59,25 +66,30 @@ int main(int const argc, char const ** argv)
     using seq1_reference_t = std::tuple_element_t<0, std::ranges::range_reference_t<decltype(all_pairs)>>;
     using seq2_reference_t = std::tuple_element_t<1, std::ranges::range_reference_t<decltype(all_pairs)>>;
 
-    std::vector<std::ranges::all_view<seq1_reference_t>> batch1{};
+    std::vector<decltype(seqan3::views::type_reduce(std::declval<seq1_reference_t>()))> batch1{};
     batch1.reserve(seqan3::simd_traits<score_t>::length);
-    std::vector<std::ranges::all_view<seq2_reference_t>> batch2{};
+    std::vector<decltype(seqan3::views::type_reduce(std::declval<seq2_reference_t>()))> batch2{};
     batch2.reserve(seqan3::simd_traits<score_t>::length);
 
     auto it = all_pairs.begin();
     size_t chunk = 0;
     while (it != all_pairs.end())
     {
+        time_t start = std::chrono::high_resolution_clock::now();
+
         batch1.clear();
         batch2.clear();
         for (size_t i = 0; i < seqan3::simd_traits<score_t>::length && it != all_pairs.end(); ++i, ++it)
         {
-            batch1.push_back(std::views::all(std::get<0>(*it)));
-            batch2.push_back(std::views::all(std::get<1>(*it)));
+            batch1.push_back(seqan3::views::type_reduce(std::get<0>(*it)));
+            batch2.push_back(seqan3::views::type_reduce(std::get<1>(*it)));
         }
 
         auto seq1_simd = convert_to_simd(batch1);
         auto seq2_simd = convert_to_simd(batch2);
+
+        duration_prep += std::chrono::high_resolution_clock::now() - start;
+        start = std::chrono::high_resolution_clock::now();
 
         // Initialise matrix
         optimal_column.clear();
@@ -97,7 +109,6 @@ int main(int const argc, char const ** argv)
             vertical += gap_extension;
         }
 
-        time_t start = std::chrono::high_resolution_clock::now();
         // Compute the matrix
         for (auto it_col = seq1_simd.begin(); it_col != seq1_simd.end(); ++it_col)
         {
@@ -107,7 +118,7 @@ int main(int const argc, char const ** argv)
 
             diagonal = *opt_it;  // cache the diagonal for next cell
             *opt_it = *hor_it; // initialise the horizontal score
-            *hor_it += + gap_extension; // initialise the horizontal score
+            *hor_it += gap_extension; // initialise the horizontal score
             vertical = *opt_it + gap_open; // initialise the vertical value
             // std::cout << "vert: " << *opt_it << "\n";
             // Go to next cell.
@@ -117,12 +128,13 @@ int main(int const argc, char const ** argv)
             for (auto it_row = seq2_simd.begin(); it_row != seq2_simd.end(); ++it_row, ++opt_it, ++hor_it)
             {
                 // Precompute the diagonal score.
-                score_t tmp = diagonal + ((*it_col == *it_row) ? match : mismatch);
+                score_t horizontal = *hor_it;
+                score_t tmp = diagonal + (((*it_col ^ *it_row) <= seqan3::simd::fill<score_t>(0)) ? match : mismatch);
 
                 // std::cout << diagonal << ": " <<   tmp << " ";
 
                 tmp = (tmp < vertical) ? vertical : tmp;
-                tmp = (tmp < *hor_it) ? *hor_it : tmp;
+                tmp = (tmp < horizontal) ? horizontal : tmp;
 
                 // Store the current max score.
                 diagonal = *opt_it; // cache the next diagonal before writing it
@@ -130,23 +142,28 @@ int main(int const argc, char const ** argv)
 
                 tmp += gap_open;  // add gap open costs
                 vertical += gap_extension;
-                *hor_it += gap_extension;
+                horizontal += gap_extension;
 
                 // store the vertical and horizontal value in the next path
                 vertical = (vertical < tmp) ? tmp : vertical;
-                *hor_it = (*hor_it < tmp) ? tmp : *hor_it;
+                *hor_it = (horizontal < tmp) ? tmp : horizontal;
             }
         }
 
+        duration_algo += std::chrono::high_resolution_clock::now() - start;
+        start = std::chrono::high_resolution_clock::now();
         for (size_t i = 0; i < std::ranges::size(batch1); ++i)
             results.push_back(optimal_column.back()[i]);
 
-        duration += std::chrono::high_resolution_clock::now() - start;
+        duration_res += std::chrono::high_resolution_clock::now() - start;
     }
 
+    auto duration_total = std::chrono::high_resolution_clock::now() - start_total;
     // auto end_time = std::chrono::high_resolution_clock::now();
-    std::cout << std::chrono::duration_cast<std::chrono::seconds>(duration).count() << "s\n";
-	std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(duration).count() << "ms\n";
+    std::cout << "Preparation:    " << std::chrono::duration_cast<std::chrono::milliseconds>(duration_prep).count() << " ms\n";
+    std::cout << "Algorithm:      " << std::chrono::duration_cast<std::chrono::milliseconds>(duration_algo).count() << " ms\n";
+    std::cout << "Extract result: " << std::chrono::duration_cast<std::chrono::milliseconds>(duration_res).count()  << " ms\n";
+    std::cout << "Total:          " << std::chrono::duration_cast<std::chrono::milliseconds>(duration_total).count()  << " ms\n";
 
     for (auto const & res : results)
         std::cerr << res << ",\n";
