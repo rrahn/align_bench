@@ -8,10 +8,9 @@
 
 namespace pairalign::input {
 
-
-inline seqan::StringSet<seqan::String<seqan::Dna5>> load_fastq(std::filesystem::path const & path) {
-    seqan::StringSet<seqan::String<seqan::Dna5>> sequences{};
-
+template <typename sequence_collection_t>
+inline void load_fastq(std::filesystem::path const & path, sequence_collection_t & sequences) {
+    seqan::clear(sequences);
     std::string tmp_id{};
     std::string tmp_qual{};
     seqan::SeqFileIn seqFileIn(path.c_str());
@@ -21,6 +20,5 @@ inline seqan::StringSet<seqan::String<seqan::Dna5>> load_fastq(std::filesystem::
         seqan::clear(tmp_id);
         seqan::clear(tmp_qual);
     }
-    return sequences;
 }
 } // namespace pairalign::seqan

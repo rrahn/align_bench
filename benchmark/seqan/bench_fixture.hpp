@@ -20,7 +20,7 @@ class bench_fixture : public benchmark::Fixture {
     public:
     void SetUp(const ::benchmark::State&) {
 
-        _sequence_collection1 = pairalign::input::load_fastq(DATADIR"sim_reads_n1K_rl150.fq");
+        pairalign::input::load_fastq(DATADIR"sim_reads_n1K_rl150.fq", _sequence_collection1);
         _sequence_collection2 = _sequence_collection1;
         std::ranges::rotate(_sequence_collection2, std::ranges::next(std::ranges::begin(_sequence_collection1)));
     }
