@@ -25,3 +25,6 @@
 [submodule "software/ksw2"]
 	path = software/ksw2
 	url = https://github.com/lh3/ksw2.git
+[submodule "lib/pairwise_aligner"]
+	path = lib/pairwise_aligner
+	url = git@github.com:rrahn/pairwise_aligner.git
