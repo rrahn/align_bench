@@ -15,18 +15,15 @@ project (align_bench CXX)
     #$ENV{SEQAN_ROOT}/util/cmake/FindTBB
 #    $ENV{SEQAN_ROOT}/util/cmake)
 
-set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/lib/seqan/util/cmake")
+set (CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 message (STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
-set (SEQAN_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/lib/seqan/include")
-message (STATUS "SEQAN_INCLUDE_PATH: ${SEQAN_INCLUDE_PATH}")
+# set (CMAKE_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/lib")
+# message (STATUS "CMAKE_INCLUDE_PATH = ${CMAKE_INCLUDE_PATH}")
 
-set (CMAKE_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/lib")
-message (STATUS "CMAKE_INCLUDE_PATH = ${CMAKE_INCLUDE_PATH}")
-
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+# set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+# set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # ----------------------------------------------------------------------------
 # Prepare global variables
@@ -35,32 +32,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 option (USE_UME_SIMD "Use UME::Simd if available." OFF)
 
 # ----------------------------------------------------------------------------
-# Include Src Directory
+# Include benchmark directory
 # ----------------------------------------------------------------------------
 
-message (STATUS "Configuring src")
-add_subdirectory(src)
+message (STATUS "Configuring benchmark suite")
 
-# ===========================================================================
-# Register Libraries (for GUI project generators)
-# ===========================================================================
-
-#seqan_setup_library ()
-
-# ===========================================================================
-# Include CPack
-# ===========================================================================
-
-#include (package)
-
-# ===========================================================================
-# Check Optional Libraries, Print Usage
-# ===========================================================================
-
-#include (FeatureSummary)
-
-# ===========================================================================
-# Setup Common Tool Description for Generic Workflow Nodes
-# ===========================================================================
-
-#include (SeqAnCtdSetup)
+include (benchmark/pairalign_benchmark.cmake)
+add_subdirectory (benchmark)
