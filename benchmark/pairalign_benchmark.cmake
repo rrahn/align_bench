@@ -4,6 +4,7 @@ include (CheckCXXSourceCompiles)
 include (FindPackageHandleStandardArgs)
 
 # Initialise seqan2 library target
+set (SEQAN_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/lib/seqan/include")
 find_package (SeqAn REQUIRED HINTS "${CMAKE_SOURCE_DIR}/lib/seqan/util/cmake" NO_DEFAULT_PATH)
 
 add_library (seqan2_seqan2 INTERFACE IMPORTED)
