@@ -13,6 +13,18 @@ target_link_libraries (seqan2_seqan2 INTERFACE ${SEQAN_LIBRARIES})
 target_include_directories (seqan2_seqan2 INTERFACE ${SEQAN_INCLUDE_DIRS})
 add_library (seqan2::seqan2 ALIAS seqan2_seqan2)
 
+set (PAIRALIGN_BENCHMARK_REPETITIONS 10)
+
 ## Register benchmark sources
 
 pairalign_benchmark(seqan_global_affine_unitary_scalar_benchmark.cpp "seqan2::seqan2")
+target_use_datasources (seqan_global_affine_unitary_scalar_benchmark FILES sim_reads_n1K_rl150.fq)
+
+pairalign_benchmark(seqan_semiglobal_affine_unitary_scalar_benchmark.cpp "seqan2::seqan2")
+target_use_datasources (seqan_semiglobal_affine_unitary_scalar_benchmark FILES sim_reads_n1K_rl150.fq)
+
+pairalign_benchmark(seqan_overlap_affine_unitary_scalar_benchmark.cpp "seqan2::seqan2")
+target_use_datasources (seqan_overlap_affine_unitary_scalar_benchmark FILES sim_reads_n1K_rl150.fq)
+
+pairalign_benchmark(seqan_local_affine_unitary_scalar_benchmark.cpp "seqan2::seqan2")
+target_use_datasources (seqan_local_affine_unitary_scalar_benchmark FILES sim_reads_n1K_rl150.fq)
