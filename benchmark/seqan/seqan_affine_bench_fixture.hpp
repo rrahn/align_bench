@@ -1,9 +1,9 @@
-#include "bench_fixture.hpp"
 
 #include <seqan/align.h>
 
+#include "seqan_bench_fixture.hpp"
 template <typename alphabet_t, typename score_t = int32_t>
-class affine_bench_fixture : public bench_fixture<seqan::String<alphabet_t>> {
+class seqan_affine_bench_fixture : public seqan_bench_fixture<alphabet_t> {
 
     using scoring_scheme_t = seqan::Score<score_t, seqan::Simple>;
 

@@ -2,9 +2,9 @@
 
 #include <seqan/align_parallel.h>
 
-#include "affine_bench_fixture.hpp"
+#include "seqan_affine_bench_fixture.hpp"
 
-BENCHMARK_TEMPLATE_F(affine_bench_fixture,
+BENCHMARK_TEMPLATE_F(seqan_affine_bench_fixture,
                      seqan_semiglobal_affine_unitary_simd_int32,
                      seqan::Dna5,
                      int32_t)(benchmark::State& state) {
