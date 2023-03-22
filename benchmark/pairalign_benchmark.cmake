@@ -3,6 +3,17 @@ cmake_minimum_required (VERSION 3.14)
 include (CheckCXXSourceCompiles)
 include (FindPackageHandleStandardArgs)
 
+# Initialise seqan2 library target
+find_package (SeqAn REQUIRED HINTS "${CMAKE_SOURCE_DIR}/lib/seqan/util/cmake" NO_DEFAULT_PATH)
+
+add_library (seqan2_seqan2 INTERFACE IMPORTED)
+target_compile_definitions (seqan2_seqan2 INTERFACE ${SEQAN_DEFINITIONS})
+target_compile_options (seqan2_seqan2 INTERFACE "${SEQAN_CXX_FLAGS_LIST}")
+target_link_libraries (seqan2_seqan2 INTERFACE ${SEQAN_LIBRARIES})
+target_include_directories (seqan2_seqan2 INTERFACE ${SEQAN_INCLUDE_DIRS})
+add_library (seqan2::seqan2 ALIAS seqan2_seqan2)
+
+# Initialise data root directory
 if (NOT DATA_ROOT_DIR)
     set(DATA_ROOT_DIR "${CMAKE_BINARY_DIR}")
 endif()
@@ -67,7 +78,7 @@ add_library (pairalign_base INTERFACE)
 target_include_directories (pairalign_base INTERFACE "${PAIRALIGN_BENCH_INCLUDE_DIR}")
 target_compile_options (pairalign_base INTERFACE "-pedantic"  "-Wall" "-Wextra" "-Wno-error")
 target_compile_features (pairalign_base INTERFACE cxx_std_20)
-target_link_libraries (pairalign_base INTERFACE "pthread")
+target_link_libraries (pairalign_base INTERFACE "seqan2::seqan2" "pthread")
 add_library (pairalign::base ALIAS pairalign_base)
 
 # add_library (pairalign_test_unit INTERFACE)

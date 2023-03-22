@@ -1,0 +1,45 @@
+cmake_minimum_required (VERSION 3.14)
+
+## Create seqan library target
+
+find_package (pairwise_aligner REQUIRED HINTS "${CMAKE_SOURCE_DIR}/lib/pairwise_aligner/build_system" NO_DEFAULT_PATH)
+
+set (PAIRALIGN_BENCHMARK_REPETITIONS 10)
+
+## Register benchmark sources
+
+pairalign_benchmark(pairwise_aligner_global_affine_unitary_scalar_benchmark.cpp "seqan::pairwise_aligner")
+target_use_datasources (pairwise_aligner_global_affine_unitary_scalar_benchmark FILES sim_reads_n1K_rl150.fq)
+
+pairalign_benchmark(pairwise_aligner_semiglobal_affine_unitary_scalar_benchmark.cpp "seqan::pairwise_aligner")
+target_use_datasources (pairwise_aligner_semiglobal_affine_unitary_scalar_benchmark FILES sim_reads_n1K_rl150.fq)
+
+pairalign_benchmark(pairwise_aligner_overlap_affine_unitary_scalar_benchmark.cpp "seqan::pairwise_aligner")
+target_use_datasources (pairwise_aligner_overlap_affine_unitary_scalar_benchmark FILES sim_reads_n1K_rl150.fq)
+
+pairalign_benchmark(pairwise_aligner_local_affine_unitary_scalar_benchmark.cpp "seqan::pairwise_aligner")
+target_use_datasources (pairwise_aligner_local_affine_unitary_scalar_benchmark FILES sim_reads_n1K_rl150.fq)
+
+pairalign_benchmark(pairwise_aligner_global_affine_unitary_simd_int32_benchmark.cpp "seqan::pairwise_aligner")
+target_use_datasources (pairwise_aligner_global_affine_unitary_simd_int32_benchmark FILES sim_reads_n1K_rl150.fq)
+
+pairalign_benchmark(pairwise_aligner_semiglobal_affine_unitary_simd_int32_benchmark.cpp "seqan::pairwise_aligner")
+target_use_datasources (pairwise_aligner_semiglobal_affine_unitary_simd_int32_benchmark FILES sim_reads_n1K_rl150.fq)
+
+pairalign_benchmark(pairwise_aligner_overlap_affine_unitary_simd_int32_benchmark.cpp "seqan::pairwise_aligner")
+target_use_datasources (pairwise_aligner_overlap_affine_unitary_simd_int32_benchmark FILES sim_reads_n1K_rl150.fq)
+
+pairalign_benchmark(pairwise_aligner_local_affine_unitary_simd_int32_benchmark.cpp "seqan::pairwise_aligner")
+target_use_datasources (pairwise_aligner_local_affine_unitary_simd_int32_benchmark FILES sim_reads_n1K_rl150.fq)
+
+pairalign_benchmark(pairwise_aligner_global_affine_unitary_simd_int16_benchmark.cpp "seqan::pairwise_aligner")
+target_use_datasources (pairwise_aligner_global_affine_unitary_simd_int16_benchmark FILES sim_reads_n1K_rl150.fq)
+
+pairalign_benchmark(pairwise_aligner_semiglobal_affine_unitary_simd_int16_benchmark.cpp "seqan::pairwise_aligner")
+target_use_datasources (pairwise_aligner_semiglobal_affine_unitary_simd_int16_benchmark FILES sim_reads_n1K_rl150.fq)
+
+pairalign_benchmark(pairwise_aligner_overlap_affine_unitary_simd_int16_benchmark.cpp "seqan::pairwise_aligner")
+target_use_datasources (pairwise_aligner_overlap_affine_unitary_simd_int16_benchmark FILES sim_reads_n1K_rl150.fq)
+
+pairalign_benchmark(pairwise_aligner_local_affine_unitary_simd_int16_benchmark.cpp "seqan::pairwise_aligner")
+target_use_datasources (pairwise_aligner_local_affine_unitary_simd_int16_benchmark FILES sim_reads_n1K_rl150.fq)
