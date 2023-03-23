@@ -19,11 +19,18 @@ inline seqan::StringSet<seqan::String<alphabet_t>> load_fastq(std::filesystem::p
     seqan::SeqFileIn seqFileIn(path.c_str());
     collection_t sequences{};
 
-    while (!seqan::atEnd(seqFileIn)) {
+    size_t const max_count = 10000;
+    size_t counter = 0;
+
+    while (!seqan::atEnd(seqFileIn) && counter < max_count) {
         sequence_t seq{};
         seqan::readRecord(tmp_id, seq, tmp_qual, seqFileIn);
         seqan::clear(tmp_id);
         seqan::clear(tmp_qual);
+        if (seqan::length(seq) < 50)
+            continue;
+
+        ++counter;
         seqan::appendValue(sequences, std::move(seq));
     }
     return sequences;
