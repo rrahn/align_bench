@@ -4,6 +4,9 @@ include (CheckCXXSourceCompiles)
 include (FindPackageHandleStandardArgs)
 
 # Initialise seqan2 library target
+find_package (ZLIB)
+find_package (BZip2)
+find_package (OpenMP)
 set (SEQAN_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/lib/seqan/include")
 find_package (SeqAn REQUIRED HINTS "${CMAKE_SOURCE_DIR}/lib/seqan/util/cmake" NO_DEFAULT_PATH)
 
