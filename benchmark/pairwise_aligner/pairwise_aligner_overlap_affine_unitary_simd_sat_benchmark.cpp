@@ -14,7 +14,7 @@ BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
                      seqan::Dna5,
                      int32_t)(benchmark::State& state) {
     using namespace seqan::pairwise_aligner;
-    constexpr size_t simd_lanes = simd_score<int8_t>::size;
+    constexpr size_t simd_lanes = simd_score<int8_t>::size_v;
     auto align_config =
         cfg::score_model_unitary_simd_saturated(
             cfg::method_global(
@@ -38,7 +38,7 @@ BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
                      seqan::Dna5,
                      int32_t)(benchmark::State& state) {
     using namespace seqan::pairwise_aligner;
-    constexpr size_t simd_lanes = simd_score<int8_t>::size;
+    constexpr size_t simd_lanes = simd_score<int8_t>::size_v;
     auto align_config =
         cfg::score_model_unitary_simd_saturated(
             cfg::method_global(
