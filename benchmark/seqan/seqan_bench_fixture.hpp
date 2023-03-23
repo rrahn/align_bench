@@ -8,7 +8,7 @@
 #include <pairalign/benchmark/fastq_reader.hpp>
 #include <pairalign/benchmark/units.hpp>
 
-template<typename alphabet_t>
+template<typename alphabet_t, auto * data>
 class seqan_bench_fixture : public benchmark::Fixture {
 
     using sequence_t = seqan::String<alphabet_t>;
@@ -22,7 +22,7 @@ class seqan_bench_fixture : public benchmark::Fixture {
         seqan::clear(_sequence_collection1);
         seqan::clear(_sequence_collection2);
 
-        _sequence_collection1 = pairalign::input::load_fastq<alphabet_t>(DATADIR"sim_reads_n1K_rl150.fq");
+        _sequence_collection1 = pairalign::input::load_fastq<alphabet_t>(*data);
 
         std::vector<sequence_t> tmp_collection2{};
         tmp_collection2.resize(seqan::length(_sequence_collection1));
