@@ -6,6 +6,10 @@ declare_datasource (FILE sim_reads_n1K_rl150.fq
                     URL ${CMAKE_SOURCE_DIR}/data/sim_reads_n1K_rl150.fq
                     URL_HASH SHA256=26a9b8eb173b8d2c5cf2810dd2612a91e193924b17a733ca66a5e5309e2334b4)
 
+declare_datasource (FILE sim_reads_sanger_n1k_min400_max800.fq
+                    URL ${CMAKE_SOURCE_DIR}/data/sim_reads_sanger_n1k_min400_max800.fq
+                    URL_HASH SHA256=f0d58f3d3028935219621b1ef5fa090abbcf5dfb10a688fcab0c2e5224699a5e)
+
 # Data sources for benchmarking
 
 # declare_datasource (FILE Ash1_v2.2.fa.gz
