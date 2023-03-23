@@ -6,7 +6,7 @@
 
 BENCHMARK_TEMPLATE_F(seqan_affine_bench_fixture,
                      seqan_global_affine_matrix_scalar_as_ho,
-                     &DS150,
+                     &AS500,
                      seqan::AminoAcid,
                      int32_t)(benchmark::State& state) {
 
@@ -23,7 +23,7 @@ BENCHMARK_TEMPLATE_F(seqan_affine_bench_fixture,
 
 BENCHMARK_TEMPLATE_F(seqan_affine_bench_fixture,
                      seqan_global_affine_matrix_scalar_as_ht,
-                     &DS400_800,
+                     &ASUniProt,
                      seqan::AminoAcid,
                      int32_t)(benchmark::State& state) {
 

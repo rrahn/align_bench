@@ -6,8 +6,8 @@
 
 BENCHMARK_TEMPLATE_F(seqan_affine_bench_fixture,
                      seqan_overlap_affine_matrix_simd_int16_ds_ho,
-                     &DS150,
-                     seqan::Dna5,
+                     &AS500,
+                     seqan::AminoAcid,
                      int16_t)(benchmark::State& state) {
 
     using exec_policy_t = seqan::ExecutionPolicy<seqan::Serial, seqan::Vectorial>;
@@ -23,8 +23,8 @@ BENCHMARK_TEMPLATE_F(seqan_affine_bench_fixture,
 
 BENCHMARK_TEMPLATE_F(seqan_affine_bench_fixture,
                      seqan_overlap_affine_matrix_simd_int16_ds_ht,
-                     &DS400_800,
-                     seqan::Dna5,
+                     &ASUniProt,
+                     seqan::AminoAcid,
                      int16_t)(benchmark::State& state) {
 
     using exec_policy_t = seqan::ExecutionPolicy<seqan::Serial, seqan::Vectorial>;
