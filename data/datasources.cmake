@@ -11,14 +11,10 @@ declare_datasource (FILE sim_reads_sanger_n1k_min400_max800.fq
                     URL_HASH SHA256=f0d58f3d3028935219621b1ef5fa090abbcf5dfb10a688fcab0c2e5224699a5e)
 
 # Data sources for benchmarking
+declare_datasource (FILE sim_as500_n1k.fasta
+                    URL ${CMAKE_SOURCE_DIR}/data/sim_as500_n1k.fasta
+                    URL_HASH SHA256=0d2d3ef5cc1e675eb2159e1a92d882438e70309b0388afd495379319e7a1ae73)
 
-# declare_datasource (FILE Ash1_v2.2.fa.gz
-#                     URL ftp://ftp.ccb.jhu.edu/pub/data/Homo_sapiens/Ash1/v2.2/Assembly/Ash1_v2.2.fa.gz)
-
-# declare_datasource (FILE ALL.chr22.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.jst
-#                     URL ftp://ftp.imp.fu-berlin.de/pub/rmaerker/jstmap/current/ALL.chr22.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.jst
-#                     URL_HASH SHA256=9f787f1f0b14375a9da695d42457da13a7cf8a4ee977ff5b0d1867717b2acd17)
-
-# declare_datasource (FILE ALL.chr22.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.jst.ibf
-#                     URL ftp://ftp.imp.fu-berlin.de//pub/rmaerker/jstmap/current/ALL.chr22.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.jst.ibf
-#                     URL_HASH SHA256=c1cc172b447bb0b4d95b62a1b948e5c23e8bb82b743c38aba0fac071b6399a33)
+declare_datasource (FILE uniprot_sprot.fasta.gz
+                    URL https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
+                    URL_HASH SHA256=2562cf025013d6e70ebbe612a5c41ddd0cc381dba8df5f7c6ad36f0c0592f579)
