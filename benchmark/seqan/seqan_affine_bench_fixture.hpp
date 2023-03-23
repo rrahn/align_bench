@@ -2,10 +2,9 @@
 
 #include <seqan/align.h>
 
-#include "seqan_bench_fixture.hpp"
+#include <pairalign/benchmark/data_sources.hpp>
 
-inline constexpr std::string_view DS150{DATADIR"sim_reads_n1K_rl150.fq"};
-inline constexpr std::string_view DS400_800{DATADIR"sim_reads_sanger_n1k_min400_max800.fq"};
+#include "seqan_bench_fixture.hpp"
 
 template <auto * data, typename alphabet_t, typename score_t = int32_t>
 class seqan_affine_bench_fixture : public seqan_bench_fixture<alphabet_t, data> {
