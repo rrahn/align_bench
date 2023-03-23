@@ -12,39 +12,15 @@ BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
                      pairwise_aligner_local_affine_unitary_simd_int16,
                      seqan::Dna5,
                      int16_t)(benchmark::State& state) {
-
-    constexpr size_t simd_lanes = seqan::pairwise_aligner::simd_score<score_type>::size;
+    using namespace seqan::pairwise_aligner;
+    constexpr size_t simd_lanes = simd_score<score_type>::size;
     auto align_config =
-        seqan::pairwise_aligner::cfg::score_model_unitary_simd(
-            seqan::pairwise_aligner::cfg::method_local(gap_cost()),
+        cfg::score_model_unitary_simd(
+            cfg::method_local(gap_cost()),
             static_cast<score_type>(match_cost()), static_cast<score_type>(mismatch_cost())
         );
 
-    auto aligner = seqan::pairwise_aligner::cfg::configure_aligner(align_config);
-
-    auto seq1 = sequence1();
-    auto seq2 = sequence2();
-
-    std::vector<score_type> scores{};
-    scores.resize(seq1.size());
-
-    for (auto _ : state) {
-        for (std::ptrdiff_t i = 0; i < std::ranges::ssize(scores); i += simd_lanes) {
-            std::ranges::subrange chunk1{
-                std::ranges::next(std::ranges::begin(seq1), i),
-                std::ranges::next(std::ranges::begin(seq1), i + simd_lanes, std::ranges::end(seq1))
-            };
-            std::ranges::subrange chunk2{
-                std::ranges::next(std::ranges::begin(seq2), i),
-                std::ranges::next(std::ranges::begin(seq2), i + simd_lanes, std::ranges::end(seq2))
-            };
-            auto results = aligner.compute(chunk1, chunk2);
-            for (int32_t j = 0; j < std::ranges::ssize(results); ++j) {
-                scores[i] = results[j].score();
-            }
-        }
-    }
-    benchmark::DoNotOptimize(scores);
+    run(state, cfg::configure_aligner(align_config), std::integral_constant<size_t, simd_lanes>{});
 }
 
 // Run the benchmark

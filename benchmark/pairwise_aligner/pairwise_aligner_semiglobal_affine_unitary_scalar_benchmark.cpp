@@ -10,21 +10,16 @@ BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
                      pairwise_aligner_semiglobal_affine_unitary_scalar,
                      seqan::Dna5,
                      int32_t)(benchmark::State& state) {
-
+    using namespace seqan::pairwise_aligner;
     auto align_config =
-        seqan::pairwise_aligner::cfg::score_model_unitary(
-            seqan::pairwise_aligner::cfg::method_global(
+        cfg::score_model_unitary(
+            cfg::method_global(
                 gap_cost(),
-                seqan::pairwise_aligner::cfg::leading_end_gap{
-                    .first_column = seqan::pairwise_aligner::cfg::end_gap::free
-                },
-                seqan::pairwise_aligner::cfg::trailing_end_gap{
-                    .last_column = seqan::pairwise_aligner::cfg::end_gap::free
-                }
-            ),
+                cfg::leading_end_gap{.first_column = cfg::end_gap::free},
+                cfg::trailing_end_gap{.last_column = cfg::end_gap::free}),
             match_cost(), mismatch_cost());
 
-    auto aligner = seqan::pairwise_aligner::cfg::configure_aligner(align_config);
+    auto aligner = cfg::configure_aligner(align_config);
 
     auto seq1 = sequence1();
     auto seq2 = sequence2();
