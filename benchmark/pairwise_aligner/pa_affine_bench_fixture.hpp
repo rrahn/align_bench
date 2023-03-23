@@ -2,8 +2,9 @@
 
 #include <pairwise_aligner/configuration/gap_model_affine.hpp>
 
-template <typename alphabet_t, typename score_t = int32_t>
-class pa_affine_bench_fixture : public pa_bench_fixture<alphabet_t> {
+#include <pairalign/benchmark/data_sources.hpp>
+template <auto * data, typename alphabet_t, typename score_t = int32_t>
+class pa_affine_bench_fixture : public pa_bench_fixture<data, alphabet_t> {
 
 public:
     using score_type = score_t;
