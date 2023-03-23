@@ -1,6 +1,7 @@
 #include "pa_bench_fixture.hpp"
 
 #include <pairwise_aligner/configuration/gap_model_affine.hpp>
+#include <pairwise_aligner/score_model/substitution_matrix.hpp>
 
 #include <pairalign/benchmark/data_sources.hpp>
 template <auto * data, typename alphabet_t, typename score_t = int32_t>
@@ -15,6 +16,10 @@ public:
 
     score_type mismatch_cost() const noexcept {
         return -4;
+    }
+
+    constexpr auto cost_matrix() const noexcept {
+        return seqan::pairwise_aligner::blosum62_standard<score_type>;
     }
 
     constexpr auto gap_cost() const noexcept {
