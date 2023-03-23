@@ -33,14 +33,7 @@ class pa_bench_fixture : public benchmark::Fixture {
     }
 
     void TearDown(benchmark::State & state) {
-        using alignment_instance_t = std::pair<sequence_t, sequence_t>;
-        std::vector<alignment_instance_t> sequences{};
-        sequences.resize(std::ranges::size(sequence1()));
-        for (int32_t i = 0; i < std::ranges::ssize(sequences); ++i) {
-            sequences[i] = std::pair{sequence1()[i], sequence2()[i]};
-        }
-
-        state.counters["CUPS"] = pairalign::units::cups(sequences);
+        tearDownImpl(state);
     }
 
     sequence_collection_type const & sequence1() const noexcept {
@@ -50,4 +43,17 @@ class pa_bench_fixture : public benchmark::Fixture {
     sequence_collection_type const & sequence2() const noexcept {
         return _sequence_collection2;
     }
+
+    protected:
+
+        virtual void tearDownImpl(benchmark::State & state) {
+            using alignment_instance_t = std::pair<sequence_t, sequence_t>;
+            std::vector<alignment_instance_t> sequences{};
+            sequences.resize(std::ranges::size(sequence1()));
+            for (int32_t i = 0; i < std::ranges::ssize(sequences); ++i) {
+                sequences[i] = std::pair{sequence1()[i], sequence2()[i]};
+            }
+
+            state.counters["CUPS"] = pairalign::units::cups(sequences);
+        }
 };
