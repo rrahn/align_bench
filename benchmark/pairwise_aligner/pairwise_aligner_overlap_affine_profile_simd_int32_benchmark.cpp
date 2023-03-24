@@ -6,9 +6,9 @@
 #include <pairwise_aligner/configuration/method_global.hpp>
 #include <pairwise_aligner/configuration/score_model_matrix_simd_1xN.hpp>
 
-#include "pa_affine_bench_fixture.hpp"
+#include "pa_affine_profile_bench_fixture.hpp"
 
-BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
+BENCHMARK_TEMPLATE_F(pa_affine_profile_bench_fixture,
                      pairwise_aligner_overlap_affine_profile_simd_int32_as_ho,
                      &AS500,
                      seqan::AminoAcid,
@@ -23,10 +23,10 @@ BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
                                    cfg::trailing_end_gap{.last_column = cfg::end_gap::free, .last_row = cfg::end_gap::free}),
                 cost_matrix());
 
-    run_profile(state, cfg::configure_aligner(align_config), std::integral_constant<size_t, simd_lanes>{});
+    run(state, cfg::configure_aligner(align_config), std::integral_constant<size_t, simd_lanes>{});
 }
 
-BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
+BENCHMARK_TEMPLATE_F(pa_affine_profile_bench_fixture,
                      pairwise_aligner_overlap_affine_profile_simd_int32_as_ht,
                      &ASUniProt,
                      seqan::AminoAcid,
@@ -41,7 +41,7 @@ BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
                                    cfg::trailing_end_gap{.last_column = cfg::end_gap::free, .last_row = cfg::end_gap::free}),
                 cost_matrix());
 
-    run_profile(state, cfg::configure_aligner(align_config), std::integral_constant<size_t, simd_lanes>{});
+    run(state, cfg::configure_aligner(align_config), std::integral_constant<size_t, simd_lanes>{});
 }
 
 BENCHMARK_MAIN();

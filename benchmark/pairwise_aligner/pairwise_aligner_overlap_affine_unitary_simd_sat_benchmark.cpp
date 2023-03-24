@@ -6,9 +6,9 @@
 #include <pairwise_aligner/configuration/method_global.hpp>
 #include <pairwise_aligner/configuration/score_model_unitary_simd_saturated.hpp>
 
-#include "pa_affine_bench_fixture.hpp"
+#include "pa_affine_bulk_bench_fixture.hpp"
 
-BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
+BENCHMARK_TEMPLATE_F(pa_affine_bulk_bench_fixture,
                      pairwise_aligner_overlap_affine_unitary_simd_sat_ds_ho,
                      &DS150,
                      seqan::Dna5,
@@ -32,7 +32,7 @@ BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
     run(state, cfg::configure_aligner(align_config), std::integral_constant<size_t, simd_lanes>{});
 }
 
-BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
+BENCHMARK_TEMPLATE_F(pa_affine_bulk_bench_fixture,
                      pairwise_aligner_overlap_affine_unitary_simd_sat_ds_ht,
                      &DS400_800,
                      seqan::Dna5,

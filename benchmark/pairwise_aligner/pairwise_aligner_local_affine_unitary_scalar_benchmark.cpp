@@ -4,9 +4,9 @@
 #include <pairwise_aligner/configuration/method_local.hpp>
 #include <pairwise_aligner/configuration/score_model_unitary.hpp>
 
-#include "pa_affine_bench_fixture.hpp"
+#include "pa_affine_single_bench_fixture.hpp"
 
-BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
+BENCHMARK_TEMPLATE_F(pa_affine_single_bench_fixture,
                      pairwise_aligner_local_affine_unitary_scalar_ds_ho,
                      &DS150,
                      seqan::Dna5,
@@ -16,23 +16,10 @@ BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
                             cfg::method_local(gap_cost()),
                             match_cost(), mismatch_cost());
 
-    auto aligner = cfg::configure_aligner(align_config);
-
-    auto seq1 = sequence1();
-    auto seq2 = sequence2();
-
-    std::vector<score_type> results{};
-
-    results.resize(seq1.size());
-    for (auto _ : state) {
-        for (int32_t i = 0; i < std::ranges::ssize(seq1); ++i) {
-           results[i] = aligner.compute(seq1[i], seq2[i]).score();
-        }
-    }
-    benchmark::DoNotOptimize(results);
+    run(state, cfg::configure_aligner(align_config));
 }
 
-BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
+BENCHMARK_TEMPLATE_F(pa_affine_single_bench_fixture,
                      pairwise_aligner_local_affine_unitary_scalar_ds_ht,
                      &DS400_800,
                      seqan::Dna5,
@@ -42,20 +29,7 @@ BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
                             cfg::method_local(gap_cost()),
                             match_cost(), mismatch_cost());
 
-    auto aligner = cfg::configure_aligner(align_config);
-
-    auto seq1 = sequence1();
-    auto seq2 = sequence2();
-
-    std::vector<score_type> results{};
-
-    results.resize(seq1.size());
-    for (auto _ : state) {
-        for (int32_t i = 0; i < std::ranges::ssize(seq1); ++i) {
-           results[i] = aligner.compute(seq1[i], seq2[i]).score();
-        }
-    }
-    benchmark::DoNotOptimize(results);
+    run(state, cfg::configure_aligner(align_config));
 }
 
 // Run the benchmark

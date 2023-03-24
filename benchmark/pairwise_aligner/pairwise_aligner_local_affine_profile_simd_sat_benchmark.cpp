@@ -6,9 +6,9 @@
 #include <pairwise_aligner/configuration/method_local.hpp>
 #include <pairwise_aligner/configuration/score_model_matrix_simd_saturated_1xN.hpp>
 
-#include "pa_affine_bench_fixture.hpp"
+#include "pa_affine_profile_bench_fixture.hpp"
 
-BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
+BENCHMARK_TEMPLATE_F(pa_affine_profile_bench_fixture,
                      pairwise_aligner_local_affine_profile_simd_sat_as_ho,
                      &AS500,
                      seqan::AminoAcid,
@@ -21,10 +21,10 @@ BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
                 cfg::method_local(gap_cost()),
                 cost_matrix());
 
-    run_profile(state, cfg::configure_aligner(align_config), std::integral_constant<size_t, simd_lanes>{});
+    run(state, cfg::configure_aligner(align_config), std::integral_constant<size_t, simd_lanes>{});
 }
 
-BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
+BENCHMARK_TEMPLATE_F(pa_affine_profile_bench_fixture,
                      pairwise_aligner_local_affine_profile_simd_sat_as_ht,
                      &ASUniProt,
                      seqan::AminoAcid,
@@ -37,7 +37,7 @@ BENCHMARK_TEMPLATE_F(pa_affine_bench_fixture,
                 cfg::method_local(gap_cost()),
                 cost_matrix());
 
-    run_profile(state, cfg::configure_aligner(align_config), std::integral_constant<size_t, simd_lanes>{});
+    run(state, cfg::configure_aligner(align_config), std::integral_constant<size_t, simd_lanes>{});
 }
 
 BENCHMARK_MAIN();

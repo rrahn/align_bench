@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string_view>
 
 inline constexpr std::string_view DS150{DATADIR"sim_reads_n1K_rl150.fq"};
