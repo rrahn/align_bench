@@ -79,3 +79,29 @@ target_use_datasources (seqan_overlap_affine_matrix_simd_int16_benchmark FILES s
 
 pairalign_benchmark(seqan_local_affine_matrix_simd_int16_benchmark.cpp "seqan2::seqan2")
 target_use_datasources (seqan_local_affine_matrix_simd_int16_benchmark FILES sim_as500_n1k.fasta uniprot_sprot.fasta.gz)
+
+# Benchmarks with profile cost model.
+
+pairalign_benchmark(seqan_global_affine_profile_simd_int32_benchmark.cpp "seqan2::seqan2")
+target_use_datasources (seqan_global_affine_profile_simd_int32_benchmark FILES sim_as500_n1k.fasta uniprot_sprot.fasta.gz)
+
+pairalign_benchmark(seqan_semiglobal_affine_profile_simd_int32_benchmark.cpp "seqan2::seqan2")
+target_use_datasources (seqan_semiglobal_affine_profile_simd_int32_benchmark FILES sim_as500_n1k.fasta uniprot_sprot.fasta.gz)
+
+pairalign_benchmark(seqan_overlap_affine_profile_simd_int32_benchmark.cpp "seqan2::seqan2")
+target_use_datasources (seqan_overlap_affine_profile_simd_int32_benchmark FILES sim_as500_n1k.fasta uniprot_sprot.fasta.gz)
+
+pairalign_benchmark(seqan_local_affine_profile_simd_int32_benchmark.cpp "seqan2::seqan2")
+target_use_datasources (seqan_local_affine_profile_simd_int32_benchmark FILES sim_as500_n1k.fasta uniprot_sprot.fasta.gz)
+
+pairalign_benchmark(seqan_global_affine_profile_simd_int16_benchmark.cpp "seqan2::seqan2")
+target_use_datasources (seqan_global_affine_profile_simd_int16_benchmark FILES sim_as500_n1k.fasta uniprot_sprot.fasta.gz)
+
+pairalign_benchmark(seqan_semiglobal_affine_profile_simd_int16_benchmark.cpp "seqan2::seqan2")
+target_use_datasources (seqan_semiglobal_affine_profile_simd_int16_benchmark FILES sim_as500_n1k.fasta uniprot_sprot.fasta.gz)
+
+pairalign_benchmark(seqan_overlap_affine_profile_simd_int16_benchmark.cpp "seqan2::seqan2")
+target_use_datasources (seqan_overlap_affine_profile_simd_int16_benchmark FILES sim_as500_n1k.fasta uniprot_sprot.fasta.gz)
+
+pairalign_benchmark(seqan_local_affine_profile_simd_int16_benchmark.cpp "seqan2::seqan2")
+target_use_datasources (seqan_local_affine_profile_simd_int16_benchmark FILES sim_as500_n1k.fasta uniprot_sprot.fasta.gz)

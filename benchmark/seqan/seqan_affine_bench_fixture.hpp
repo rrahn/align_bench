@@ -15,6 +15,9 @@ class seqan_affine_bench_fixture : public seqan_bench_fixture<alphabet_t, data> 
     scoring_scheme_t _scheme{5, -4, -1, -11};
 
 public:
+    seqan_affine_bench_fixture() = default;
+    virtual ~seqan_affine_bench_fixture() = default;
+
     using score_type = score_t;
     scoring_scheme_t scoring_scheme() const noexcept {
         return _scheme;

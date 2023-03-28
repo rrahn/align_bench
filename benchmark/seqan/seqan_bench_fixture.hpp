@@ -10,14 +10,17 @@
 
 template<typename alphabet_t, auto * data>
 class seqan_bench_fixture : public benchmark::Fixture {
-
+protected:
     using sequence_t = seqan::String<alphabet_t>;
     using sequence_collection_type = seqan::StringSet<sequence_t>;
 
     sequence_collection_type _sequence_collection1;
     sequence_collection_type _sequence_collection2;
 
-    public:
+public:
+    seqan_bench_fixture() = default;
+    virtual ~seqan_bench_fixture() = default;
+
     void SetUp(const ::benchmark::State&) {
         seqan::clear(_sequence_collection1);
         seqan::clear(_sequence_collection2);
@@ -38,6 +41,18 @@ class seqan_bench_fixture : public benchmark::Fixture {
     }
 
     void TearDown(benchmark::State & state) {
+        tearDownImpl(state);
+    }
+
+    sequence_collection_type const & sequence1() const noexcept {
+        return _sequence_collection1;
+    }
+
+    sequence_collection_type const & sequence2() const noexcept {
+        return _sequence_collection2;
+    }
+
+    virtual void tearDownImpl(benchmark::State & state) const {
         using std_sequence = std::vector<alphabet_t>;
         using alignment_instance_t = std::pair<std_sequence, std_sequence>;
         std::vector<alignment_instance_t> sequences{};
@@ -54,13 +69,5 @@ class seqan_bench_fixture : public benchmark::Fixture {
         }
 
         state.counters["CUPS"] = pairalign::units::cups(sequences);
-    }
-
-    sequence_collection_type const & sequence1() const noexcept {
-        return _sequence_collection1;
-    }
-
-    sequence_collection_type const & sequence2() const noexcept {
-        return _sequence_collection2;
     }
 };
