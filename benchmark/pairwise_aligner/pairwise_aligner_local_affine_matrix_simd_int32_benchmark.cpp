@@ -9,7 +9,7 @@
 #include "pa_affine_bulk_bench_fixture.hpp"
 
 BENCHMARK_TEMPLATE_F(pa_affine_bulk_bench_fixture,
-                     pairwise_aligner_local_affine_unitary_simd_int32_ds_ho,
+                     pairwise_aligner_local_affine_matrix_simd_int32_as_ho,
                      &AS500,
                      seqan::AminoAcid,
                      int32_t)(benchmark::State& state) {
@@ -25,7 +25,7 @@ BENCHMARK_TEMPLATE_F(pa_affine_bulk_bench_fixture,
 }
 
 BENCHMARK_TEMPLATE_F(pa_affine_bulk_bench_fixture,
-                     pairwise_aligner_local_affine_unitary_simd_int32_ds_ht,
+                     pairwise_aligner_local_affine_matrix_simd_int32_as_ht,
                      &ASUniProt,
                      seqan::AminoAcid,
                      int32_t)(benchmark::State& state) {

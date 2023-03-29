@@ -5,7 +5,7 @@
 #include "seqan_affine_profile_bench_fixture.hpp"
 
 BENCHMARK_TEMPLATE_F(seqan_affine_profile_bench_fixture,
-                     pairwise_aligner_overlap_affine_profile_simd_int32_as_ho,
+                     seqan_overlap_affine_profile_simd_int32_as_ho,
                      &AS500,
                      seqan::AminoAcid,
                      int32_t)(benchmark::State& state) {
@@ -22,7 +22,7 @@ BENCHMARK_TEMPLATE_F(seqan_affine_profile_bench_fixture,
 }
 
 BENCHMARK_TEMPLATE_F(seqan_affine_profile_bench_fixture,
-                     pairwise_aligner_overlap_affine_profile_simd_int32_as_ht,
+                     seqan_overlap_affine_profile_simd_int32_as_ht,
                      &ASUniProt,
                      seqan::AminoAcid,
                      int32_t)(benchmark::State& state) {

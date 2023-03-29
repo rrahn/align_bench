@@ -7,7 +7,7 @@
 #include "seqan_affine_profile_bench_fixture.hpp"
 
 BENCHMARK_TEMPLATE_F(seqan_affine_profile_bench_fixture,
-                     pairwise_aligner_global_affine_profile_simd_int16_as_ho,
+                     seqan_global_affine_profile_simd_int16_as_ho,
                      &AS500,
                      seqan::AminoAcid,
                      int16_t)(benchmark::State& state) {
@@ -23,7 +23,7 @@ BENCHMARK_TEMPLATE_F(seqan_affine_profile_bench_fixture,
 }
 
 BENCHMARK_TEMPLATE_F(seqan_affine_profile_bench_fixture,
-                     pairwise_aligner_global_affine_profile_simd_int16_as_ht,
+                     seqan_global_affine_profile_simd_int16_as_ht,
                      &ASUniProt,
                      seqan::AminoAcid,
                      int16_t)(benchmark::State& state) {

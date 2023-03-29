@@ -5,7 +5,7 @@
 #include "seqan_affine_bench_fixture.hpp"
 
 BENCHMARK_TEMPLATE_F(seqan_affine_bench_fixture,
-                     seqan_overlap_affine_matrix_scalar_ds_ho,
+                     seqan_overlap_affine_matrix_scalar_as_ho,
                      &AS500,
                      seqan::AminoAcid,
                      int32_t)(benchmark::State& state) {
@@ -22,7 +22,7 @@ BENCHMARK_TEMPLATE_F(seqan_affine_bench_fixture,
 }
 
 BENCHMARK_TEMPLATE_F(seqan_affine_bench_fixture,
-                     seqan_overlap_affine_matrix_scalar_ds_ht,
+                     seqan_overlap_affine_matrix_scalar_as_ht,
                      &ASUniProt,
                      seqan::AminoAcid,
                      int32_t)(benchmark::State& state) {
